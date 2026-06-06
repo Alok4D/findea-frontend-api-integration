@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Minus, Plus, Loader2 } from "lucide-react";
 import { useGetCartQuery, useRemoveFromCartMutation } from "@/lib/redux/api/cartApi";
+import { useAppSelector } from "@/lib/redux/hooks";
 import { toast } from "react-hot-toast";
 import { CartItemsSkeleton } from "./CartItemsSkeleton";
 
@@ -37,7 +39,17 @@ function QtyStepper({ value, onChange }: { value: number; onChange: (n: number) 
 }
 
 export function CartItemsClient() {
-  const { data: cartData, isLoading } = useGetCartQuery();
+  const router = useRouter();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to view your cart", { id: "cart-auth-error" });
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
+
+  const { data: cartData, isLoading } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const [localQty, setLocalQty] = useState<Record<string, number>>({});
   const [bulkAction, setBulkAction] = useState("add-to-cart");
   const [removeFromCart] = useRemoveFromCartMutation();
@@ -71,6 +83,10 @@ export function CartItemsClient() {
     // API logic for clear cart would go here if available
     toast.error("Clear cart API not yet implemented");
   };
+
+  if (!isAuthenticated) {
+    return null; // Will redirect in useEffect
+  }
 
   if (isLoading) {
     return <CartItemsSkeleton />;

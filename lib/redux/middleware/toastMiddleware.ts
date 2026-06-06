@@ -32,7 +32,10 @@ export const toastMiddleware: Middleware = () => (next) => (action: any) => {
 
       // Prevent double toast for refresh token failures or fetch cancel errors
       if (endpointName !== "refresh" && errorPayload?.status !== "FETCH_ERROR") {
-        toast.error(message);
+        // Skip generic 'Unauthorized' toasts to prevent duplicates when local components handle auth
+        if (message !== "Unauthorized" && errorPayload?.status !== 401) {
+          toast.error(message);
+        }
       }
     }
   }

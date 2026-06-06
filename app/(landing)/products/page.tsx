@@ -9,18 +9,33 @@ import FilterSidebar from "./_components/FilterSidebar";
 import SortBar from "./_components/SortBar";
 import Pagination from "./_components/Pagination";
 import Container from "@/components/shared/Container";
-import productData from "@/data/products.json";
-import { Product, Category } from "@/types/product";
 import { Filter, X } from "lucide-react";
+import { useGetProductsQuery, useGetCategoriesQuery } from "@/lib/redux/api/productApi";
+import ProductGridSkeleton from "./_components/ProductGridSkeleton";
+import FilterSidebarSkeleton from "./_components/FilterSidebarSkeleton";
 
 const ProductsPage = () => {
-  const [activeSort, setActiveSort] = useState("Default Sorting");
+  const [activeSort, setActiveSort] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [expandedFilters, setExpandedFilters] = useState<string[]>(["FINDÉA COLLECTION", "Woman"]);
+  const [expandedFilters, setExpandedFilters] = useState<string[]>(["FINDÉA COLLECTION"]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const products = productData.products as Product[];
-  const categories = productData.categories as Category[];
+  // API State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const [category, setCategory] = useState("");
+
+  const { data: productsData, isFetching: isFetchingProducts } = useGetProductsQuery({
+    page,
+    limit,
+    category,
+    sortBy: activeSort || undefined,
+  });
+
+  const { data: categoriesData, isFetching: isFetchingCategories } = useGetCategoriesQuery();
+
+  const products = productsData?.data || [];
+  const categories = categoriesData || [];
 
   const toggleFilter = (filter: string) => {
     setExpandedFilters(prev => 
@@ -56,11 +71,20 @@ const ProductsPage = () => {
                 <X size={24} />
               </button>
             </div>
-            <FilterSidebar 
-              categories={categories}
-              expandedFilters={expandedFilters}
-              toggleFilter={toggleFilter}
-            />
+            {isFetchingCategories ? (
+              <FilterSidebarSkeleton />
+            ) : (
+              <FilterSidebar 
+                categories={categories}
+                expandedFilters={expandedFilters}
+                toggleFilter={toggleFilter}
+                activeCategory={category}
+                setCategory={(slug) => {
+                  setCategory(slug);
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -70,11 +94,20 @@ const ProductsPage = () => {
           <div className="flex flex-col lg:flex-row gap-12">
             {/* Desktop Sidebar */}
             <div className="hidden lg:block">
-              <FilterSidebar 
-                categories={categories}
-                expandedFilters={expandedFilters}
-                toggleFilter={toggleFilter}
-              />
+              {isFetchingCategories ? (
+                <FilterSidebarSkeleton />
+              ) : (
+                <FilterSidebar 
+                  categories={categories}
+                  expandedFilters={expandedFilters}
+                  toggleFilter={toggleFilter}
+                  activeCategory={category}
+                  setCategory={(slug) => {
+                    setCategory(slug);
+                    setPage(1);
+                  }}
+                />
+              )}
             </div>
 
             <main className="flex-grow">
@@ -83,14 +116,27 @@ const ProductsPage = () => {
                 setActiveSort={setActiveSort}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
+                limit={limit}
+                setLimit={(val) => {
+                  setLimit(val);
+                  setPage(1);
+                }}
               />
 
-              <ProductGrid 
-                products={products}
-                viewMode={viewMode}
-              />
+              {isFetchingProducts ? (
+                <ProductGridSkeleton viewMode={viewMode} />
+              ) : (
+                <ProductGrid 
+                  products={products}
+                  viewMode={viewMode}
+                />
+              )}
 
-              <Pagination currentPage={1} totalPages={10} />
+              <Pagination 
+                currentPage={productsData?.page || 1} 
+                totalPages={productsData?.totalPages || 1} 
+                onPageChange={(p) => setPage(p)}
+              />
             </main>
           </div>
         </Container>

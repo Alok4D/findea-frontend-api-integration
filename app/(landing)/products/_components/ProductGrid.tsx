@@ -1,8 +1,8 @@
-import { Product } from "@/types/product";
+import { ApiProduct } from "@/lib/redux/api/productApi";
 import ProductCard from "./ProductCard";
 
 interface ProductGridProps {
-  products: Product[];
+  products: ApiProduct[];
   viewMode: "grid" | "list";
 }
 

@@ -1,14 +1,16 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Category } from "@/types/product";
+import { ChevronDown, ChevronUp, Check } from "lucide-react";
+import { ApiCategory } from "@/lib/redux/api/productApi";
 
 interface FilterSidebarProps {
-  categories: Category[];
+  categories: ApiCategory[];
   expandedFilters: string[];
   toggleFilter: (filter: string) => void;
+  activeCategory: string;
+  setCategory: (slug: string) => void;
 }
 
-const FilterSidebar = ({ categories, expandedFilters, toggleFilter }: FilterSidebarProps) => {
+const FilterSidebar = ({ categories, expandedFilters, toggleFilter, activeCategory, setCategory }: FilterSidebarProps) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -64,24 +66,24 @@ const FilterSidebar = ({ categories, expandedFilters, toggleFilter }: FilterSide
 
       {expandedFilters.includes("FINDÉA COLLECTION") && (
         <ul className="space-y-4 mb-10">
+          <li className="font-playfair">
+            <div className="flex items-center group cursor-pointer"
+                 onClick={() => setCategory("")}>
+              <span className={`text-[15px] flex-1 ${!activeCategory ? 'font-bold' : 'text-gray-800'}`}>
+                All Products
+              </span>
+              {!activeCategory && <Check size={16} />}
+            </div>
+          </li>
           {categories.map((cat) => (
-            <li key={cat.name} className="font-playfair">
-              <div className="flex justify-between items-center group cursor-pointer"
-                   onClick={() => cat.sub && toggleFilter(cat.name)}>
-                <span className={`text-[15px] ${expandedFilters.includes(cat.name) ? 'font-bold' : 'text-gray-800'}`}>
-                  {cat.name} ({cat.count})
+            <li key={cat.id} className="font-playfair">
+              <div className="flex items-center group cursor-pointer"
+                   onClick={() => setCategory(cat.slug)}>
+                <span className={`text-[15px] flex-1 ${activeCategory === cat.slug ? 'font-bold' : 'text-gray-800'}`}>
+                  {cat.name}
                 </span>
-                {cat.sub && (
-                  expandedFilters.includes(cat.name) ? <ChevronUp size={14}/> : <ChevronDown size={14}/>
-                )}
+                {activeCategory === cat.slug && <Check size={16} />}
               </div>
-              {cat.sub && expandedFilters.includes(cat.name) && (
-                <ul className="pl-4 mt-3 space-y-2">
-                  {cat.sub.map(s => (
-                    <li key={s} className="text-[14px] text-gray-600 hover:text-black cursor-pointer">{s}</li>
-                  ))}
-                </ul>
-              )}
             </li>
           ))}
         </ul>

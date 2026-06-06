@@ -5,9 +5,11 @@ interface SortBarProps {
   setActiveSort: (sort: string) => void;
   viewMode: "grid" | "list";
   setViewMode: (mode: "grid" | "list") => void;
+  limit: number;
+  setLimit: (limit: number) => void;
 }
 
-const SortBar = ({ activeSort, setActiveSort, viewMode, setViewMode }: SortBarProps) => {
+const SortBar = ({ activeSort, setActiveSort, viewMode, setViewMode, limit, setLimit }: SortBarProps) => {
   return (
     <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
       <div className="flex items-center gap-4">
@@ -17,10 +19,11 @@ const SortBar = ({ activeSort, setActiveSort, viewMode, setViewMode }: SortBarPr
               value={activeSort}
               onChange={(e) => setActiveSort(e.target.value)}
             >
-              <option>Default Sorting</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest</option>
+              <option value="">Default Sorting</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="newest">Newest</option>
+              <option value="popular">Popular</option>
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
         </div>
@@ -45,10 +48,14 @@ const SortBar = ({ activeSort, setActiveSort, viewMode, setViewMode }: SortBarPr
       <div className="flex items-center gap-4">
         <span className="text-[14px] text-gray-500">Show</span>
         <div className="relative inline-block border border-gray-300 bg-white">
-          <select className="appearance-none bg-transparent pl-4 pr-10 py-2 text-[13px] outline-none cursor-pointer">
-            <option>12</option>
-            <option>24</option>
-            <option>48</option>
+          <select 
+            className="appearance-none bg-transparent pl-4 pr-10 py-2 text-[13px] outline-none cursor-pointer"
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value))}
+          >
+            <option value={12}>12</option>
+            <option value={24}>24</option>
+            <option value={48}>48</option>
           </select>
           <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
         </div>

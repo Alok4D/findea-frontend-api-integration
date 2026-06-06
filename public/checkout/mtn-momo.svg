@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="MTN MoMo">
+  <circle cx="20" cy="20" r="18" fill="#ffcb05" stroke="#000" stroke-width="1.2"/>
+  <text x="20" y="17" text-anchor="middle" fill="#000" font-family="system-ui,sans-serif" font-size="9" font-weight="800">MTN</text>
+  <text x="20" y="26" text-anchor="middle" fill="#000" font-family="system-ui,sans-serif" font-size="6" font-weight="700">MoMo</text>
+</svg>

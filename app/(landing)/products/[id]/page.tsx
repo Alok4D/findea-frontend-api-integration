@@ -10,8 +10,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { RegistrySelectModal } from "../_components/RegistrySelectModal";
 import { RegistrySuccessModal } from "../_components/RegistrySuccessModal";
+import { ProductDetailsSkeleton } from "../_components/ProductDetailsSkeleton";
 import type { RegistryModalStep, RegistryOption } from "@/types/registry-modal";
 import { useGetProductBySlugQuery, useAddReviewMutation } from "@/lib/redux/api/productApi";
+import { useAddToCartMutation } from "@/lib/redux/api/cartApi";
 import { toast } from "react-hot-toast";
 
 const ProductDetailsPage = () => {
@@ -31,6 +33,7 @@ const ProductDetailsPage = () => {
     const [email, setEmail] = useState("");
     
     const [addReview, { isLoading: isSubmittingReview }] = useAddReviewMutation();
+    const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
 
     const registryOptions = useMemo<RegistryOption[]>(
         () => [
@@ -105,6 +108,31 @@ const ProductDetailsPage = () => {
         }
     };
 
+    const handleAddToCart = async () => {
+        if (!product) return;
+        try {
+            await addToCart({ productId: product.id, quantity }).unwrap();
+            toast.success("Added to cart successfully!");
+        } catch (err: any) {
+            console.error("Failed to add to cart", err);
+            
+            let errorMessage = "Failed to add to cart. Please try again.";
+            if (err) {
+                if ('data' in err && err.data?.message) {
+                    const msg = err.data.message;
+                    errorMessage = Array.isArray(msg) ? msg[0] : msg;
+                } else if ('error' in err) {
+                    errorMessage = err.error;
+                }
+                
+                if (errorMessage === "Unauthorized" || err.status === 401) {
+                    errorMessage = "Please log in to add items to your cart.";
+                }
+            }
+            toast.error(errorMessage);
+        }
+    };
+
     const { data: product, isLoading } = useGetProductBySlugQuery(id as string);
 
     if (isLoading) {
@@ -112,10 +140,7 @@ const ProductDetailsPage = () => {
             <main className="min-h-screen bg-white">
                 <LandingTopAnnouncementBar />
                 <Navbar />
-                <div className="flex flex-col items-center justify-center py-40">
-                    <Loader2 className="animate-spin text-gray-400 mb-4" size={48} />
-                    <p className="text-gray-500 font-playfair">Loading product details...</p>
-                </div>
+                <ProductDetailsSkeleton />
             </main>
         );
     }
@@ -269,8 +294,13 @@ const ProductDetailsPage = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <button className="bg-[#EFE3C9] text-black py-3 px-6 hover:bg-[#e5d4b0] transition-colors">
-                  Add To Cart
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  className="bg-[#EFE3C9] text-black py-3 px-6 hover:bg-[#e5d4b0] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAddingToCart && <Loader2 className="animate-spin" size={16} />}
+                  {isAddingToCart ? "Adding..." : "Add To Cart"}
                 </button>
                 <button
                   type="button"

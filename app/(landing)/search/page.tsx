@@ -4,11 +4,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import React, { useState, useMemo, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Filter, X, ChevronRight } from "lucide-react";
-
 import LandingTopAnnouncementBar from "../_components/LandingTopAnnouncementBar";
 import Navbar from "../_components/Navbar";
 import Container from "@/components/shared/Container";
-
 import SearchHeader from "./_components/SearchHeader";
 import SearchSidebar from "./_components/SearchSidebar";
 import SearchSortBar from "./_components/SearchSortBar";

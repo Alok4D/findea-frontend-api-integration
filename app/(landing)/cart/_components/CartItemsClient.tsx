@@ -1,27 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
-
-type CartLine = {
-  id: number;
-  name: string;
-  sku: string;
-  image: string;
-  unitPrice: number;
-};
-
-const INITIAL: CartLine[] = [
-  {
-    id: 1,
-    name: "Ant Studded Collar Shirt",
-    sku: "051546",
-    image: "https://images.unsplash.com/photo-1597354984706-fac992d9306f?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    unitPrice: 864,
-  },
-];
+import { Minus, Plus, Loader2 } from "lucide-react";
+import { useGetCartQuery, useRemoveFromCartMutation } from "@/lib/redux/api/cartApi";
+import { toast } from "react-hot-toast";
+import { CartItemsSkeleton } from "./CartItemsSkeleton";
 
 function formatMoney(n: number) {
   return `$${n.toFixed(2)}`;
@@ -52,28 +37,46 @@ function QtyStepper({ value, onChange }: { value: number; onChange: (n: number) 
 }
 
 export function CartItemsClient() {
-  const [lines, setLines] = useState(INITIAL);
-  const [qty, setQty] = useState<Record<number, number>>({ 1: 1 });
+  const { data: cartData, isLoading } = useGetCartQuery();
+  const [localQty, setLocalQty] = useState<Record<string, number>>({});
   const [bulkAction, setBulkAction] = useState("add-to-cart");
+  const [removeFromCart] = useRemoveFromCartMutation();
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * (qty[line.id] ?? 1), 0);
+  const items = cartData?.items || [];
+
+  const subtotal = items.reduce((sum: number, item: any) => {
+    const q = localQty[item.id] ?? item.quantity;
+    return sum + (parseFloat(item.product.price) * q);
+  }, 0);
+  
   /** Design: free shipping; flat rate shown as reference only. */
   const total = subtotal;
 
-  const removeLine = (id: number) => {
-    setLines((prev) => prev.filter((l) => l.id !== id));
-    setQty((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+  const removeLine = async (cartItemId: string) => {
+    try {
+      await removeFromCart(cartItemId).unwrap();
+      setLocalQty((prev) => {
+        const next = { ...prev };
+        delete next[cartItemId];
+        return next;
+      });
+      toast.success("Item removed from cart");
+    } catch (err: any) {
+      console.error("Failed to remove item", err);
+      toast.error(err?.data?.message || err?.error || "Failed to remove item");
+    }
   };
 
   const clearCart = () => {
-    setLines([]);
+    // API logic for clear cart would go here if available
+    toast.error("Clear cart API not yet implemented");
   };
 
-  if (lines.length === 0) {
+  if (isLoading) {
+    return <CartItemsSkeleton />;
+  }
+
+  if (items.length === 0) {
     return (
       <section className="mx-auto max-w-xl px-6 py-20 text-center">
         <p className="font-playfair text-xl font-bold uppercase tracking-wide text-[#1A1A1A]">
@@ -113,21 +116,22 @@ export function CartItemsClient() {
                 </tr>
               </thead>
               <tbody>
-                {lines.map((line) => {
-                  const q = qty[line.id] ?? 1;
-                  const lineSub = line.unitPrice * q;
+                {items.map((item: any) => {
+                  const q = localQty[item.id] ?? item.quantity;
+                  const unitPrice = parseFloat(item.product.price);
+                  const lineSub = unitPrice * q;
                   return (
-                    <tr key={line.id} className="border-b border-[#2C2724]/12">
+                    <tr key={item.id} className="border-b border-[#2C2724]/12">
                       <td className="py-8 pl-5 pr-4 align-top">
                         <div className="flex gap-4">
                           <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-[#E3DDD3]">
-                            <Image src={line.image} alt="" fill className="object-cover" sizes="96px" />
+                            <Image src={item.product.imageUrl} alt="" fill className="object-cover" sizes="96px" />
                           </div>
                           <div>
-                            <p className="font-playfair text-base font-semibold text-[#1A1A1A]">{line.name}</p>
+                            <p className="font-playfair text-base font-semibold text-[#1A1A1A]">{item.product.name}</p>
                             <button
                               type="button"
-                              onClick={() => removeLine(line.id)}
+                              onClick={() => removeLine(item.id)}
                               className="mt-2 font-sans text-xs text-[#6B6560] underline underline-offset-2 hover:text-[#1A1A1A]"
                             >
                               Remove
@@ -136,13 +140,13 @@ export function CartItemsClient() {
                         </div>
                       </td>
                       <td className="px-4 py-8 align-middle font-playfair text-sm font-semibold text-[#1A1A1A]">
-                        {formatMoney(line.unitPrice)}
+                        {formatMoney(unitPrice)}
                       </td>
-                      <td className="px-4 py-8 align-middle font-sans text-xs text-[#4A4A4A]">{line.sku}</td>
+                      <td className="px-4 py-8 align-middle font-sans text-xs text-[#4A4A4A]">{item.product.id.substring(0,8).toUpperCase()}</td>
                       <td className="px-4 py-8 align-middle">
                         <QtyStepper
                           value={q}
-                          onChange={(n) => setQty((prev) => ({ ...prev, [line.id]: n }))}
+                          onChange={(n) => setLocalQty((prev) => ({ ...prev, [item.id]: n }))}
                         />
                       </td>
                       <td className="py-8 pr-5 text-right align-middle font-playfair text-sm font-semibold text-[#1A1A1A]">
@@ -155,36 +159,36 @@ export function CartItemsClient() {
             </table>
           </div>
 
-          {/* Mobile cards */}
           <div className="space-y-6 md:hidden">
-            {lines.map((line) => {
-              const q = qty[line.id] ?? 1;
-              const lineSub = line.unitPrice * q;
+            {items.map((item: any) => {
+              const q = localQty[item.id] ?? item.quantity;
+              const unitPrice = parseFloat(item.product.price);
+              const lineSub = unitPrice * q;
               return (
                 <article
-                  key={line.id}
+                  key={item.id}
                   className="border border-[#2C2724]/15 bg-white/50 p-4"
                 >
                   <div className="flex gap-4">
                     <div className="relative h-28 w-24 shrink-0 bg-[#E3DDD3]">
-                      <Image src={line.image} alt="" fill className="object-cover" sizes="96px" />
+                      <Image src={item.product.imageUrl} alt="" fill className="object-cover" sizes="96px" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-playfair text-base font-semibold text-[#1A1A1A]">{line.name}</p>
-                      <p className="mt-1 font-sans text-xs text-[#4A4A4A]">SKU: {line.sku}</p>
-                      <p className="mt-2 font-playfair text-sm font-semibold">{formatMoney(line.unitPrice)}</p>
+                      <p className="font-playfair text-base font-semibold text-[#1A1A1A]">{item.product.name}</p>
+                      <p className="mt-1 font-sans text-xs text-[#4A4A4A]">SKU: {item.product.id.substring(0,8).toUpperCase()}</p>
+                      <p className="mt-2 font-playfair text-sm font-semibold">{formatMoney(unitPrice)}</p>
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <QtyStepper
                       value={q}
-                      onChange={(n) => setQty((prev) => ({ ...prev, [line.id]: n }))}
+                      onChange={(n) => setLocalQty((prev) => ({ ...prev, [item.id]: n }))}
                     />
                     <p className="font-playfair text-sm font-semibold">Subtotal: {formatMoney(lineSub)}</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeLine(line.id)}
+                    onClick={() => removeLine(item.id)}
                     className="mt-3 font-sans text-xs text-[#6B6560] underline underline-offset-2"
                   >
                     Remove

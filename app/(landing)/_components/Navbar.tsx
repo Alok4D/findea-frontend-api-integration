@@ -16,8 +16,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@/lib/redux/hooks";
+import { useGetCartQuery } from "@/lib/redux/api/cartApi";
 
 const Navbar = () => {
+  
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -26,6 +28,9 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: cartData } = useGetCartQuery(undefined, { skip: !isAuthenticated });
+  const cartItemCount = cartData?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,9 +106,11 @@ const Navbar = () => {
           <Gift size={22} className="text-gray-900" />
           <Link href="/cart/items" className="text-gray-900 relative" aria-label="Shopping cart">
             <ShoppingCart size={22} />
-            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-              2
-            </span>
+            {cartItemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                {cartItemCount}
+              </span>
+            )}
           </Link>
         </div>
       </div>
@@ -282,9 +289,11 @@ const Navbar = () => {
           </Link>
           <Link href="/cart/items" className="hover:opacity-60 transition-all relative" aria-label="Shopping cart">
             <ShoppingCart size={22} className="text-gray-900" />
-            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-              2
-            </span>
+            {cartItemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                {cartItemCount}
+              </span>
+            )}
           </Link>
           <a href="#" className="hover:opacity-60 transition-all">
             <Gift size={22} className="text-gray-900" />

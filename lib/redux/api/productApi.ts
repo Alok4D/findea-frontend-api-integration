@@ -59,8 +59,25 @@ export const productApi = baseApi.injectEndpoints({
       query: () => "/products/categories",
       providesTags: ["Category"],
     }),
+    getProductBySlug: builder.query<ApiProduct, string>({
+      query: (slug) => `/products/${slug}`,
+      providesTags: (result, error, slug) => [{ type: "Product", id: slug }],
+    }),
+    addReview: builder.mutation<any, { productId: string; orderId: string; rating: number; comment: string }>({
+      query: (body) => ({
+        url: "/reviews",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { productId }) => [{ type: "Product", id: productId }],
+    }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetProductsQuery, useGetCategoriesQuery } = productApi;
+export const { 
+  useGetProductsQuery, 
+  useGetCategoriesQuery, 
+  useGetProductBySlugQuery,
+  useAddReviewMutation
+} = productApi;

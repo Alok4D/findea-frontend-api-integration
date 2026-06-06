@@ -1,16 +1,21 @@
+import { useState } from "react";
 import Image from "next/image";
 import { Eye, Heart, ArrowRight } from "lucide-react";
 import { ApiProduct } from "@/lib/redux/api/productApi";
 import Link from "next/link";
+import QuickViewModal from "./QuickViewModal";
 
 interface ProductCardProps {
   product: ApiProduct;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+
+
   return (
     <div className="group">
-      <Link href={`/products/${product.id}`} className="block relative aspect-[4/5] overflow-hidden mb-3 md:mb-6 bg-white">
+      <Link href={`/products/${product.slug}`} className="block relative aspect-[4/5] overflow-hidden mb-3 md:mb-6 bg-white">
         <Image
           src={product.imageUrl || "https://images.unsplash.com/photo-1680039211156-66c721b87625?q=80&w=690&auto=format&fit=crop"}
           alt={product.name}
@@ -23,16 +28,27 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <div className="flex justify-between items-center mb-1">
           <span className="text-[13px] text-gray-500 font-playfair uppercase tracking-wider">{product.category?.name}</span>
           <div className="flex gap-3 text-gray-400">
-             <button className="hover:text-black transition-colors"><Eye size={18} strokeWidth={1.5} /></button>
+             <button 
+               onClick={() => setIsQuickViewOpen(true)}
+               className="hover:text-black transition-colors"
+             >
+               <Eye size={18} strokeWidth={1.5} />
+             </button>
              <button className="hover:text-black transition-colors"><Heart size={18} strokeWidth={1.5} /></button>
           </div>
         </div>
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.slug}`}>
           <h3 className="text-[17px] md:text-[20px] font-playfair font-bold text-[#1C1C1C] mb-0.5 md:mb-1 hover:text-brand-text transition-colors">{product.name}</h3>
         </Link>
         <p className="text-[12px] md:text-[14px] text-gray-500 font-playfair mb-2 md:mb-3">{product.description}</p>
         <div className="text-[14px] md:text-[16px] font-bold text-[#1C1C1C] mb-3 md:mb-4">${product.price}</div>
       </div>
+      
+      <QuickViewModal 
+        slug={product.slug} 
+        isOpen={isQuickViewOpen} 
+        onClose={() => setIsQuickViewOpen(false)} 
+      />
     </div>
   );
 };

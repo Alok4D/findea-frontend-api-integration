@@ -5,14 +5,14 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import LandingTopAnnouncementBar from "../../_components/LandingTopAnnouncementBar";
 import Navbar from "../../_components/Navbar";
 import Container from "@/components/shared/Container";
-import productData from "@/data/products.json";
-import { Product } from "@/types/product";
-import { ChevronRight, Star, Heart, Minus, Plus, Gift, Eye, MapPin, ChevronLeft } from "lucide-react";
+import { ChevronRight, Star, Heart, Minus, Plus, Gift, Eye, MapPin, ChevronLeft, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { RegistrySelectModal } from "../_components/RegistrySelectModal";
 import { RegistrySuccessModal } from "../_components/RegistrySuccessModal";
 import type { RegistryModalStep, RegistryOption } from "@/types/registry-modal";
+import { useGetProductBySlugQuery, useAddReviewMutation } from "@/lib/redux/api/productApi";
+import { toast } from "react-hot-toast";
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
@@ -22,6 +22,15 @@ const ProductDetailsPage = () => {
     const [registryModalStep, setRegistryModalStep] = useState<RegistryModalStep>("closed");
     const [selectedRegistryId, setSelectedRegistryId] = useState<string | null>(null);
     const [activeRegistryName, setActiveRegistryName] = useState("Sarah & Johnson's Wedding");
+
+    // Review Form State
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState("");
+    const [orderId, setOrderId] = useState("");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    
+    const [addReview, { isLoading: isSubmittingReview }] = useAddReviewMutation();
 
     const registryOptions = useMemo<RegistryOption[]>(
         () => [
@@ -59,9 +68,57 @@ const ProductDetailsPage = () => {
         };
     }, [registryModalStep, closeRegistryModals]);
 
-    const product = useMemo(() => {
-        return productData.products.find(p => p.id === Number(id));
-    }, [id]);
+    const handleReviewSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!product || !orderId || !comment) return;
+        
+        try {
+            await addReview({
+                productId: product.id,
+                orderId,
+                rating,
+                comment,
+            }).unwrap();
+            
+            toast.success("Your review has been submitted successfully!");
+            // Reset form on success
+            setRating(5);
+            setComment("");
+            setOrderId("");
+        } catch (err: any) {
+            console.error("Failed to submit review", err);
+            
+            let errorMessage = "Failed to submit review. Please check your Order ID.";
+            if (err) {
+                if ('data' in err && err.data?.message) {
+                    const msg = err.data.message;
+                    errorMessage = Array.isArray(msg) ? msg[0] : msg;
+                } else if ('error' in err) {
+                    errorMessage = err.error;
+                }
+                
+                if (errorMessage === "Unauthorized" || err.status === 401) {
+                    errorMessage = "You can only review products you purchased in that order";
+                }
+            }
+            toast.error(errorMessage);
+        }
+    };
+
+    const { data: product, isLoading } = useGetProductBySlugQuery(id as string);
+
+    if (isLoading) {
+        return (
+            <main className="min-h-screen bg-white">
+                <LandingTopAnnouncementBar />
+                <Navbar />
+                <div className="flex flex-col items-center justify-center py-40">
+                    <Loader2 className="animate-spin text-gray-400 mb-4" size={48} />
+                    <p className="text-gray-500 font-playfair">Loading product details...</p>
+                </div>
+            </main>
+        );
+    }
 
     if (!product) {
         return (
@@ -80,7 +137,7 @@ const ProductDetailsPage = () => {
 
     // Use product image as the first image in gallery
     const images = [
-        product.image,
+        product.imageUrl || "https://images.unsplash.com/photo-1680039211156-66c721b87625?q=80&w=690&auto=format&fit=crop",
         "https://images.unsplash.com/photo-1594932224491-fa7133f73bba?q=80&w=1928&auto=format&fit=crop",
         "https://images.unsplash.com/photo-1539109132381-31a15b2974ea?q=80&w=1887&auto=format&fit=crop",
         "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1720&auto=format&fit=crop"
@@ -120,9 +177,9 @@ const ProductDetailsPage = () => {
                             <div className="flex items-center justify-center gap-1 text-[11px] uppercase tracking-[0.2em] text-gray-500 font-medium">
                                 <Link href="/" className="hover:text-black">Home</Link>
                                 <span className="mx-1">&gt;</span>
-                                <Link href="/products" className="hover:text-black">Woman</Link>
+                                <Link href="/products" className="hover:text-black">{product.category?.name || 'Category'}</Link>
                                 <span className="mx-1">&gt;</span>
-                                <span className="text-black font-bold">Blouse</span>
+                                <span className="text-black font-bold">{product.name}</span>
                             </div>
                         </div>
 
@@ -149,8 +206,8 @@ const ProductDetailsPage = () => {
           <div className="lg:col-span-4 space-y-4">
             <div className="aspect-[3/4] overflow-hidden ">
               <img 
-                src="/product-details-img/Rectangle 4480 (1).png" 
-                alt="Main Product" 
+                src={images[0]} 
+                alt={product.name} 
                 className="w-full h-full object-cover"
               />
             </div>
@@ -166,16 +223,12 @@ const ProductDetailsPage = () => {
           {/* Center: Product Info */}
           <div className="lg:col-span-5 space-y-6">
             <header className="space-y-2">
-              <h1 className="text-3xl font-serif">Contemporary Surplice Top</h1>
-              <p className="text-2xl font-medium">$500.00</p>
+              <h1 className="text-3xl font-serif">{product.name}</h1>
+              <p className="text-2xl font-medium">${product.price}</p>
             </header>
 
             <div className="text-sm leading-relaxed text-gray-600 space-y-4 border-b pb-6">
-              <p>Our mission is to make discovering premium products and reliable services simple and enjoyable...</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Our mission is to make discovering premium products</li>
-                <li>Our mission is to make discovering premium</li>
-              </ul>
+              <p>{product.description}</p>
             </div>
 
             <div className="space-y-4">
@@ -241,9 +294,10 @@ const ProductDetailsPage = () => {
                 <Heart size={16} /> Add to wishlist
               </button>
               <div className="pt-4 border-t space-y-1 text-gray-500">
-                <p>Category: <span className="text-black">Woman</span></p>
-                <p>Tag: <span className="text-black">Look3</span></p>
-                <p>SKU: <span className="text-black">2355678</span></p>
+                <p>Category: <span className="text-black">{product.category?.name}</span></p>
+                <p>Tag: <span className="text-black">{product.slug}</span></p>
+                <p>SKU: <span className="text-black">{product.id.substring(0, 8).toUpperCase()}</span></p>
+                <p>Stock: <span className={product.stock > 0 ? "text-green-600" : "text-red-600"}>{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span></p>
               </div>
             </div>
           </div>
@@ -290,36 +344,76 @@ const ProductDetailsPage = () => {
 
           <div>
             <h2 className="text-xl font-serif mb-4">
-              Be the first to review &ldquo;Crew Sweatshirt&rdquo;
+              Be the first to review &ldquo;{product.name}&rdquo;
             </h2>
             <p className="text-xs text-gray-500 mb-6 italic">Your email address will not be published. Required fields are marked</p>
-            
-            <form className="space-y-6">
+
+            <form className="space-y-6" onSubmit={handleReviewSubmit}>
               <div>
                 <p className="text-sm font-medium mb-2">Your rating *</p>
-                <div className="flex gap-1 text-yellow-500">
-                  {Array(15).fill(0).map((_, i) => <span key={i} className="text-xs">★</span>)}
+                <div className="flex gap-1 text-yellow-500 text-xl cursor-pointer">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span 
+                      key={star} 
+                      onClick={() => setRating(star)}
+                      className={star <= rating ? "text-yellow-500" : "text-gray-300"}
+                    >
+                      ★
+                    </span>
+                  ))}
                 </div>
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2">Your review *</label>
-                <textarea className="w-full h-32 bg-[#DEDAD2] border-none p-4 focus:ring-1 focus:ring-black outline-none" />
+                <textarea 
+                  required
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="w-full h-32 bg-[#DEDAD2] border-none p-4 focus:ring-1 focus:ring-black outline-none" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Order ID (Required for verification) *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={orderId}
+                  onChange={(e) => setOrderId(e.target.value)}
+                  placeholder="e.g. cmq1zzhkt000dqjae..."
+                  className="w-full bg-[#DEDAD2] border-none p-3 focus:ring-1 focus:ring-black outline-none" 
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Name *</label>
-                  <input type="text" className="w-full bg-[#DEDAD2] border-none p-3 focus:ring-1 focus:ring-black outline-none" />
+                  <label className="block text-sm font-medium mb-2">Name</label>
+                  <input 
+                    type="text" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-[#DEDAD2] border-none p-3 focus:ring-1 focus:ring-black outline-none" 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Email *</label>
-                  <input type="email" className="w-full bg-[#DEDAD2] border-none p-3 focus:ring-1 focus:ring-black outline-none" />
+                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[#DEDAD2] border-none p-3 focus:ring-1 focus:ring-black outline-none" 
+                  />
                 </div>
               </div>
 
-              <button className="bg-[#EFE3C9] text-black py-2 px-10 hover:bg-[#e5d4b0] font-medium transition-all">
-                Submit
+              <button 
+                type="submit"
+                disabled={isSubmittingReview}
+                className="bg-[#EFE3C9] text-black py-2 px-10 hover:bg-[#e5d4b0] font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSubmittingReview && <Loader2 className="animate-spin" size={16} />}
+                {isSubmittingReview ? "Submitting..." : "Submit"}
               </button>
             </form>
           </div>

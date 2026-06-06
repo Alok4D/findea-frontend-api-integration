@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 1010 --turbopack",
+    "dev": "next dev --port 3000 --turbopack",
     "build": "next build --turbopack",
-    "start": "next start --port 1010",
+    "start": "next start --port 3000",
     "check": "npm run lint && npm run build",
     "lcheck": "npm run lint",
     "lint": "eslint"

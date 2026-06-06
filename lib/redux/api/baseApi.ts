@@ -9,7 +9,7 @@ import { logout, setCredentials } from "../slices/authSlice";
 import { getCookie } from "@/lib/cookies";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://findea-backend-71yj.onrender.com/api",
+  baseUrl: "http://209.74.71.27:4000/api",
   prepareHeaders: (headers, { getState }) => {
     // Try to get token from state first
     const token = (getState() as RootState).auth.token;

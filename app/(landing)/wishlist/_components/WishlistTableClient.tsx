@@ -2,8 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { Eye, Minus, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Eye, Minus, Plus, Trash2, Loader2 } from "lucide-react";
+import { useGetWishlistQuery, useRemoveFromWishlistMutation } from "@/lib/redux/api/wishlistApi";
+import { useAddToCartMutation } from "@/lib/redux/api/cartApi";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import { WishlistSkeleton } from "./WishlistSkeleton";
 
 type WishlistRow = {
   id: number;
@@ -67,20 +73,82 @@ function QtyStepper({
 }
 
 export function WishlistTableClient() {
-  const [rows, setRows] = useState(INITIAL_ROWS);
-  const [qty, setQty] = useState<Record<number, number>>(() =>
-    Object.fromEntries(INITIAL_ROWS.map((r) => [r.id, 1]))
-  );
-  const [bulkAction, setBulkAction] = useState("add-to-cart");
+  const router = useRouter();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to view your wishlist", { id: "wishlist-auth-error" });
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
 
-  const removeRow = (id: number) => {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-    setQty((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+  const { data: wishlistData, isLoading } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
+  const rows = wishlistData || [];
+
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [bulkAction, setBulkAction] = useState("add-to-cart");
+  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const [isAddingAll, setIsAddingAll] = useState(false);
+
+  const handleAddToCart = async (productId: string, quantity: number) => {
+    try {
+      await addToCart({ productId, quantity }).unwrap();
+      toast.success("Added to cart successfully!");
+    } catch (err: any) {
+      console.error("Failed to add to cart", err);
+      if (err?.status !== 401 && err?.data?.message !== "Unauthorized") {
+         toast.error(err?.data?.message || err?.error || "Failed to add to cart");
+      }
+    }
   };
+
+  const handleAddAllToCart = async () => {
+    setIsAddingAll(true);
+    let successCount = 0;
+    try {
+      for (const row of rows) {
+        const quantity = qty[row.id] ?? 1;
+        await addToCart({ productId: row.productId, quantity }).unwrap();
+        successCount++;
+      }
+      if (successCount > 0) {
+        toast.success(`Successfully added ${successCount} items to cart!`);
+      }
+    } catch (err) {
+      console.error("Failed to add some items to cart", err);
+    } finally {
+      setIsAddingAll(false);
+    }
+  };
+
+  const handleBulkApply = () => {
+    if (bulkAction === "add-to-cart") {
+      handleAddAllToCart();
+    } else if (bulkAction === "remove") {
+      rows.forEach((row: any) => removeRow(row.productId));
+    }
+  };
+
+  const removeRow = async (id: string) => {
+    try {
+      await removeFromWishlist(id).unwrap();
+      toast.success("Item removed from wishlist");
+    } catch (err: any) {
+      console.error("Failed to remove from wishlist", err);
+      toast.error(err?.data?.message || err?.error || "Failed to remove item");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (isLoading) {
+    return <WishlistSkeleton />;
+  }
 
   if (rows.length === 0) {
     return (
@@ -121,16 +189,16 @@ export function WishlistTableClient() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {rows.map((row: any) => (
               <tr key={row.id} className="border-b border-black/10 align-top">
                 <td className="py-8 pr-4">
                   <div className="flex gap-4">
                     <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-gray-100">
-                      <Image src={row.image} alt="" fill className="object-cover" sizes="80px" />
+                      <Image src={row.product?.imageUrl || ""} alt={row.product?.name || ""} fill className="object-cover" sizes="80px" />
                     </div>
                     <div>
-                      <p className="font-playfair text-base font-bold text-[#1A1A1A]">{row.name}</p>
-                      <p className="mt-1 font-sans text-xs text-gray-600">SKU: {row.sku}</p>
+                      <p className="font-playfair text-base font-bold text-[#1A1A1A]">{row.product?.name}</p>
+                      <p className="mt-1 font-sans text-xs text-gray-600">SKU: {row.product?.id?.substring(0,8).toUpperCase()}</p>
                     </div>
                   </div>
                 </td>
@@ -141,14 +209,14 @@ export function WishlistTableClient() {
                   />
                 </td>
                 <td className="py-8 text-center align-middle font-playfair text-base font-semibold text-[#1A1A1A]">
-                  {row.price}
+                  ${parseFloat(row.product?.price || "0").toFixed(2)}
                 </td>
-                <td className="py-8 text-center align-middle font-sans text-sm text-[#1A1A1A]">{row.stock}</td>
+                <td className="py-8 text-center align-middle font-sans text-sm text-[#1A1A1A]">{row.product?.stock > 0 ? "In Stock" : "Out of stock"}</td>
                 <td className="py-8 text-right align-middle">
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <Link
-                        href={`/products/${row.id}`}
+                        href={`/products/${row.product?.slug}`}
                         className="inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
                         aria-label="View product"
                       >
@@ -156,6 +224,7 @@ export function WishlistTableClient() {
                       </Link>
                       <button
                         type="button"
+                        onClick={() => handleAddToCart(row.productId, qty[row.id] ?? 1)}
                         className="bg-[#F2E1C8] px-4 py-2 font-playfair text-xs font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-[#e8d4b0]"
                       >
                         Add To Cart
@@ -164,12 +233,12 @@ export function WishlistTableClient() {
                         type="button"
                         aria-label="Remove from wishlist"
                         className="inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
-                        onClick={() => removeRow(row.id)}
+                        onClick={() => removeRow(row.productId)}
                       >
                         <Trash2 size={18} />
                       </button>
                     </div>
-                    <p className="font-sans text-xs text-gray-500">Added on: {row.added}</p>
+                    <p className="font-sans text-xs text-gray-500">Added on: {new Date(row.addedAt).toLocaleDateString()}</p>
                   </div>
                 </td>
               </tr>
@@ -180,20 +249,20 @@ export function WishlistTableClient() {
 
       {/* Mobile cards */}
       <div className="space-y-6 md:hidden">
-        {rows.map((row) => (
+        {rows.map((row: any) => (
           <article
             key={row.id}
             className="border border-black/10 bg-white/40 p-4 shadow-sm"
           >
             <div className="flex gap-4">
               <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-gray-100">
-                <Image src={row.image} alt="" fill className="object-cover" sizes="96px" />
+                <Image src={row.product?.imageUrl || ""} alt={row.product?.name || ""} fill className="object-cover" sizes="96px" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-playfair text-base font-bold text-[#1A1A1A]">{row.name}</p>
-                <p className="mt-1 font-sans text-xs text-gray-600">SKU: {row.sku}</p>
-                <p className="mt-2 font-playfair text-sm font-semibold">{row.price}</p>
-                <p className="mt-1 font-sans text-xs text-[#1A1A1A]">{row.stock}</p>
+                <p className="font-playfair text-base font-bold text-[#1A1A1A]">{row.product?.name}</p>
+                <p className="mt-1 font-sans text-xs text-gray-600">SKU: {row.product?.id?.substring(0,8).toUpperCase()}</p>
+                <p className="mt-2 font-playfair text-sm font-semibold">${parseFloat(row.product?.price || "0").toFixed(2)}</p>
+                <p className="mt-1 font-sans text-xs text-[#1A1A1A]">{row.product?.stock > 0 ? "In Stock" : "Out of stock"}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -204,7 +273,7 @@ export function WishlistTableClient() {
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
-                href={`/products/${row.id}`}
+                href={`/products/${row.product?.slug}`}
                 className="inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white"
                 aria-label="View product"
               >
@@ -212,6 +281,7 @@ export function WishlistTableClient() {
               </Link>
               <button
                 type="button"
+                onClick={() => handleAddToCart(row.productId, qty[row.id] ?? 1)}
                 className="flex-1 min-w-[140px] bg-[#F2E1C8] px-4 py-2.5 font-playfair text-xs font-bold uppercase text-[#1A1A1A]"
               >
                 Add To Cart
@@ -220,12 +290,12 @@ export function WishlistTableClient() {
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white"
                 aria-label="Remove"
-                onClick={() => removeRow(row.id)}
+                onClick={() => removeRow(row.productId)}
               >
                 <Trash2 size={18} />
               </button>
             </div>
-            <p className="mt-3 font-sans text-xs text-gray-500">Added on: {row.added}</p>
+            <p className="mt-3 font-sans text-xs text-gray-500">Added on: {new Date(row.addedAt).toLocaleDateString()}</p>
           </article>
         ))}
       </div>
@@ -248,6 +318,7 @@ export function WishlistTableClient() {
             </select>
             <button
               type="button"
+              onClick={handleBulkApply}
               className="bg-[#F2E1C8] px-6 py-2 font-playfair text-xs font-bold uppercase text-[#1A1A1A] hover:bg-[#e8d4b0]"
             >
               Apply
@@ -255,9 +326,12 @@ export function WishlistTableClient() {
           </div>
           <button
             type="button"
-            className="w-full bg-[#F2E1C8] px-8 py-3.5 font-playfair text-sm font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-[#e8d4b0] md:w-auto md:px-12 md:text-base"
+            onClick={handleAddAllToCart}
+            disabled={isAddingAll}
+            className="w-full bg-[#F2E1C8] px-8 py-3.5 font-playfair text-sm font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-[#e8d4b0] md:w-auto md:px-12 md:text-base disabled:opacity-50 flex justify-center items-center gap-2"
           >
-            Add All To Cart
+            {isAddingAll && <Loader2 size={16} className="animate-spin" />}
+            {isAddingAll ? "Adding..." : "Add All To Cart"}
           </button>
         </div>
       </div>

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import Image from "next/image";
-import { Eye, Heart, ArrowRight } from "lucide-react";
+import { Eye, Heart, ArrowRight, Loader2 } from "lucide-react";
 import { ApiProduct } from "@/lib/redux/api/productApi";
+import { useAddToWishlistMutation, useGetWishlistQuery, useRemoveFromWishlistMutation } from "@/lib/redux/api/wishlistApi";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
 import QuickViewModal from "./QuickViewModal";
 
@@ -11,8 +14,43 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [addToWishlist, { isLoading: isAddingToWishlist }] = useAddToWishlistMutation();
+  const [removeFromWishlist, { isLoading: isRemovingFromWishlist }] = useRemoveFromWishlistMutation();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { data: wishlistData } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
 
+  const wishlistedItem = wishlistData?.find((item: any) => item.productId === product.id);
+  const isWishlisted = !!wishlistedItem;
+  const isWishlistLoading = isAddingToWishlist || isRemovingFromWishlist;
 
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to add to wishlist", { id: "wishlist-auth-error" });
+      return;
+    }
+    
+    if (isWishlisted && wishlistedItem) {
+      try {
+        await removeFromWishlist(wishlistedItem.productId).unwrap();
+        toast.success("Removed from wishlist");
+      } catch (err: any) {
+        if (err?.status !== 401 && err?.data?.message !== "Unauthorized") {
+            console.error("Failed to remove from wishlist", err);
+        }
+      }
+    } else {
+      try {
+        await addToWishlist(product.id).unwrap();
+        toast.success("Added to wishlist successfully!");
+      } catch (err: any) {
+        if (err?.status !== 401 && err?.data?.message !== "Unauthorized" && err?.data?.message !== "Product already in wishlist") {
+            console.error("Failed to add to wishlist", err);
+        } else if (err?.data?.message === "Product already in wishlist") {
+            toast.error("Product already in wishlist");
+        }
+      }
+    }
+  };
   return (
     <div className="group">
       <Link href={`/products/${product.slug}`} className="block relative aspect-[4/5] overflow-hidden mb-3 md:mb-6 bg-white">
@@ -34,7 +72,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
              >
                <Eye size={18} strokeWidth={1.5} />
              </button>
-             <button className="hover:text-black transition-colors"><Heart size={18} strokeWidth={1.5} /></button>
+             <button 
+               onClick={handleToggleWishlist}
+               disabled={isWishlistLoading}
+               className={`hover:text-black transition-colors disabled:opacity-50 ${isWishlisted ? "text-red-500 hover:text-red-600" : ""}`}
+             >
+               {isWishlistLoading ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <Heart size={18} strokeWidth={1.5} fill={isWishlisted ? "currentColor" : "none"} />}
+             </button>
           </div>
         </div>
         <Link href={`/products/${product.slug}`}>

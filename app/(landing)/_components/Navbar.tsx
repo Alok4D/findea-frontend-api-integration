@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { useGetCartQuery } from "@/lib/redux/api/cartApi";
+import { useGetWishlistQuery } from "@/lib/redux/api/wishlistApi";
 
 const Navbar = () => {
   
@@ -31,6 +32,9 @@ const Navbar = () => {
 
   const { data: cartData } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const cartItemCount = cartData?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+
+  const { data: wishlistData } = useGetWishlistQuery(undefined, { skip: !isAuthenticated });
+  const wishlistItemCount = wishlistData?.length || 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,9 +287,11 @@ const Navbar = () => {
           </Link>
           <Link href="/wishlist" className="hover:opacity-60 transition-all relative" aria-label="Wishlist">
             <Heart size={22} className="text-gray-900" />
-            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-              5
-            </span>
+            {wishlistItemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                {wishlistItemCount}
+              </span>
+            )}
           </Link>
           <Link href="/cart/items" className="hover:opacity-60 transition-all relative" aria-label="Shopping cart">
             <ShoppingCart size={22} className="text-gray-900" />

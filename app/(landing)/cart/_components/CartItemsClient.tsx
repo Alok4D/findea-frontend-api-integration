@@ -214,8 +214,8 @@ export function CartItemsClient() {
             })}
           </div>
 
-          <div className="mt-8 flex flex-col gap-4 border-t border-[#2C2724]/15 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+            {/* <div className="flex flex-wrap items-center gap-3">
               <label htmlFor="cart-bulk" className="sr-only">
                 Cart action
               </label>
@@ -234,7 +234,7 @@ export function CartItemsClient() {
               >
                 Apply
               </button>
-            </div>
+            </div> */}
             <button
               type="button"
               onClick={clearCart}

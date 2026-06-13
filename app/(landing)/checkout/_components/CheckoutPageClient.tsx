@@ -70,7 +70,7 @@ export function CheckoutPageClient() {
       const res = await createOrder(orderPayload).unwrap();
       toast.success("Order placed successfully!");
       // Redirect or clear cart if needed. But for now we just redirect to confirmation
-      router.push("/order/confirmation");
+      router.push(`/order/confirmation?orderId=${res.orderNumber}`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to place order.");

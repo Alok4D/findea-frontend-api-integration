@@ -1,7 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { CheckoutFlowShell } from "@/components/checkout/CheckoutFlowShell";
 import NewsletterSection from "../../_components/NewsletterSection";
+import { useSearchParams } from "next/navigation";
+import { useTrackOrderQuery } from "@/lib/redux/api/orderApi";
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(date);
+};
 
 const TRACK_STEPS = [
   { n: 1, title: "Order Confirmed", body: "Your order has been confirmed and we are preparing your items.", when: "Feb 1, 2024 · 9:12 AM" },
@@ -11,6 +23,36 @@ const TRACK_STEPS = [
 ];
 
 export default function OrderConfirmationPage() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+
+  const { data: orderData, isLoading, error } = useTrackOrderQuery(orderId || "", {
+    skip: !orderId,
+  });
+
+  if (isLoading) {
+    return (
+      <CheckoutFlowShell activeStep={3}>
+        <div className="flex items-center justify-center min-h-[500px]">
+          <p className="font-playfair text-xl">Loading your order details...</p>
+        </div>
+      </CheckoutFlowShell>
+    );
+  }
+
+  if (error || !orderData) {
+    return (
+      <CheckoutFlowShell activeStep={3}>
+        <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
+          <p className="font-playfair text-xl text-red-500">Could not find order details.</p>
+          <Link href="/products" className="font-sans text-sm underline">Return to shop</Link>
+        </div>
+      </CheckoutFlowShell>
+    );
+  }
+
+  const orderDate = new Date(orderData.createdAt);
+
   return (
     <CheckoutFlowShell activeStep={3}>
       <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
@@ -27,21 +69,26 @@ export default function OrderConfirmationPage() {
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Order Number</p>
-                  <p className="mt-1 font-playfair text-lg font-bold tracking-wide text-[#1A1A1A]">ORD-2024-001234</p>
+                  <p className="mt-1 font-playfair text-lg font-bold tracking-wide text-[#1A1A1A]">{orderData.orderNumber}</p>
                 </div>
               </div>
               <div className="mt-8 grid gap-6 border-t border-[#4A3F36]/20 pt-6 sm:grid-cols-3">
                 <div>
                   <p className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Order Date</p>
-                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">February 1, 2024</p>
+                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">
+                    {formatDate(orderDate)}
+                  </p>
                 </div>
                 <div>
                   <p className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Status</p>
-                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">In Transit</p>
+                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">{orderData.status}</p>
                 </div>
                 <div>
                   <p className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Est. Delivery</p>
-                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">February 5, 2024</p>
+                  <p className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">
+                    {/* Add 4 days for est delivery */}
+                    {formatDate(new Date(orderDate.getTime() + 4 * 24 * 60 * 60 * 1000))}
+                  </p>
                 </div>
               </div>
             </section>
@@ -74,20 +121,20 @@ export default function OrderConfirmationPage() {
               <dl className="mt-6 grid gap-6 sm:grid-cols-2">
                 <div>
                   <dt className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Carrier</dt>
-                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">FedEx</dd>
+                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">Standard</dd>
                 </div>
                 <div>
                   <dt className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Tracking Number</dt>
-                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">794617382947</dd>
+                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">{orderData.trackingNumber || "Pending"}</dd>
                 </div>
                 <div>
                   <dt className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Method</dt>
-                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">Standard Shipping</dd>
+                  <dd className="mt-1 font-playfair text-sm font-semibold text-[#1A1A1A]">{orderData.deliveryMethod}</dd>
                 </div>
                 <div className="sm:col-span-2">
                   <dt className="font-sans text-[11px] font-medium uppercase tracking-wide text-[#6B6560]">Delivery Address</dt>
                   <dd className="mt-1 font-playfair text-sm font-semibold leading-relaxed text-[#1A1A1A]">
-                    123 Main Street, New York, NY 10016
+                    {orderData.shippingLine1}, {orderData.shippingLine2 && `${orderData.shippingLine2}, `} {orderData.shippingCity}, {orderData.shippingState}, {orderData.shippingCountry}
                   </dd>
                 </div>
               </dl>
@@ -99,34 +146,38 @@ export default function OrderConfirmationPage() {
               <h2 className="border-b border-[#4A3F36]/20 pb-4 font-playfair text-lg font-bold uppercase tracking-[0.12em] text-[#1A1A1A]">
                 Your Order
               </h2>
-              <div className="mt-5 flex gap-4 border-b border-[#4A3F36]/15 pb-5">
-                <div className="relative h-20 w-20 shrink-0 bg-[#E3DDD3]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1597354984706-fac992d9306f?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="80px"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-playfair text-sm font-semibold text-[#1A1A1A]">Ant Studded Collar Shirt</p>
-                  <p className="mt-1 font-sans text-[11px] text-[#6B6560]">1 × $864.00</p>
-                  <p className="mt-2 font-sans text-xs text-[#4A4A4A]">Subtotal: $864.00</p>
-                </div>
+              <div className="mt-5 border-b border-[#4A3F36]/15 pb-5 space-y-4">
+                {orderData.items.map((item: any) => (
+                  <div key={item.id} className="flex gap-4">
+                    <div className="relative h-20 w-20 shrink-0 bg-[#E3DDD3]">
+                      <Image
+                        src={item.product?.imageUrl || "https://images.unsplash.com/photo-1597354984706-fac992d9306f?q=80&w=688&auto=format&fit=crop"}
+                        alt={item.productName || "Product"}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-playfair text-sm font-semibold text-[#1A1A1A]">{item.productName}</p>
+                      <p className="mt-1 font-sans text-[11px] text-[#6B6560]">{item.quantity} × ${item.unitPrice}</p>
+                      <p className="mt-2 font-sans text-xs text-[#4A4A4A]">Subtotal: ${(parseFloat(item.unitPrice) * item.quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
               <dl className="mt-5 space-y-2 font-sans text-sm">
                 <div className="flex justify-between gap-4">
                   <dt>Subtotal</dt>
-                  <dd className="tabular-nums">$864.00</dd>
+                  <dd className="tabular-nums">${parseFloat(orderData.subtotal).toFixed(2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt>Shipping</dt>
-                  <dd>Free Shipping</dd>
+                  <dd>${parseFloat(orderData.deliveryFee).toFixed(2)}</dd>
                 </div>
                 <div className="flex justify-between border-t border-[#4A3F36]/20 pt-4 font-playfair text-lg font-bold text-[#1A1A1A]">
                   <dt>Total</dt>
-                  <dd className="tabular-nums">$864.00</dd>
+                  <dd className="tabular-nums">${parseFloat(orderData.total).toFixed(2)}</dd>
                 </div>
               </dl>
             </section>

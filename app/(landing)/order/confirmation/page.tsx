@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import { CheckoutFlowShell } from "@/components/checkout/CheckoutFlowShell";
@@ -22,7 +24,7 @@ const TRACK_STEPS = [
   { n: 4, title: "Out For Delivery", body: "The carrier expects delivery today.", when: "Feb 5, 2024 · 8:00 AM" },
 ];
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
@@ -215,5 +217,19 @@ export default function OrderConfirmationPage() {
       </div>
       <NewsletterSection />
     </CheckoutFlowShell>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <CheckoutFlowShell activeStep={3}>
+        <div className="flex items-center justify-center min-h-[500px]">
+          <p className="font-playfair text-xl">Loading...</p>
+        </div>
+      </CheckoutFlowShell>
+    }>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

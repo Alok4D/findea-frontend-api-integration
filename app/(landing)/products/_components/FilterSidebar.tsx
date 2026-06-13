@@ -8,42 +8,11 @@ interface FilterSidebarProps {
   toggleFilter: (filter: string) => void;
   activeCategory: string;
   setCategory: (slug: string) => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
 }
 
-const FilterSidebar = ({ categories, expandedFilters, toggleFilter, activeCategory, setCategory }: FilterSidebarProps) => {
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
-
-  const handleSliderMove = useCallback((clientX: number) => {
-    if (!isDragging || !sliderRef.current) return;
-
-    const rect = sliderRef.current.getBoundingClientRect();
-    const percent = Math.min(Math.max(0, (clientX - rect.left) / rect.width), 1);
-    const newValue = Math.round(percent * 500000);
-
-    setPriceRange([0, newValue]);
-  }, [isDragging]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => handleSliderMove(e.clientX);
-    const handleTouchMove = (e: TouchEvent) => handleSliderMove(e.touches[0].clientX);
-    const handleMouseUp = () => setIsDragging(false);
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging, handleSliderMove]);
+const FilterSidebar = ({ categories, expandedFilters, toggleFilter, activeCategory, setCategory, priceRange, setPriceRange }: FilterSidebarProps) => {
 
   const filterSections = [
     "PRICE",
@@ -102,54 +71,53 @@ const FilterSidebar = ({ categories, expandedFilters, toggleFilter, activeCatego
               <div className="mt-6">
                 <div className="text-[14px] mb-6 font-bold text-[#1C1C1C]">Price: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}</div>
                 
-                <div 
-                  ref={sliderRef}
-                  className="relative h-1.5 bg-gray-200 mb-10 mx-3 cursor-pointer rounded-full"
-                  onClick={(e) => {
-                    if (isDragging) return;
-                    const rect = sliderRef.current?.getBoundingClientRect();
-                    if (!rect) return;
-                    const percent = (e.clientX - rect.left) / rect.width;
-                    const val = Math.round(percent * 500000);
-                    setPriceRange([0, val]);
-                  }}
-                >
-                  {/* Track highlight */}
+                <div className="relative w-full h-1.5 bg-gray-200 rounded-lg mb-10 mx-3">
+                  {/* The track active region */}
                   <div 
-                    className="absolute h-full bg-[#D4C3A3] z-10 rounded-full" 
-                    style={{ 
-                      left: '0%', 
-                      width: `${(priceRange[1] / 500000) * 100}%`
+                    className="absolute h-full bg-[#D4C3A3] rounded-lg"
+                    style={{
+                      left: `${(priceRange[0] / 500000) * 100}%`,
+                      width: `${((priceRange[1] - priceRange[0]) / 500000) * 100}%`
                     }}
-                  ></div>
-                  
-                  {/* Max Handle */}
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#D4C3A3] rounded-full border-2 border-white shadow-md cursor-grab active:cursor-grabbing z-30 transition-shadow hover:shadow-lg"
-                    style={{ left: `calc(${(priceRange[1] / 500000) * 100}% - 8px)` }}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      setIsDragging(true);
+                  />
+                  {/* Min Input */}
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="500000" 
+                    value={priceRange[0]} 
+                    onChange={(e) => {
+                      const val = Math.min(parseInt(e.target.value), priceRange[1] - 1);
+                      setPriceRange([val, priceRange[1]]);
                     }}
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                      setIsDragging(true);
+                    className="absolute -top-1 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#D4C3A3] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md cursor-pointer"
+                  />
+                  {/* Max Input */}
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="500000" 
+                    value={priceRange[1]} 
+                    onChange={(e) => {
+                      const val = Math.max(parseInt(e.target.value), priceRange[0] + 1);
+                      setPriceRange([priceRange[0], val]);
                     }}
-                  ></div>
+                    className="absolute -top-1 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#D4C3A3] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md cursor-pointer"
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-6">
                   {[
-                    { label: "10-25k", max: 25000 },
-                    { label: "25-50k", max: 50000 },
-                    { label: "50-100k", max: 100000 },
-                    { label: "100k+", max: 500000 }
+                    { label: "10-25k", range: [10000, 25000] },
+                    { label: "25-50k", range: [25000, 50000] },
+                    { label: "50-100k", range: [50000, 100000] },
+                    { label: "100k+", range: [100000, 500000] }
                   ].map(item => (
                     <button 
                       key={item.label} 
-                      onClick={() => setPriceRange([0, item.max])}
+                      onClick={() => setPriceRange([item.range[0], item.range[1]])}
                       className={`px-3 py-1.5 text-[11px] font-bold transition-colors uppercase tracking-widest border ${
-                        priceRange[1] === item.max
+                        priceRange[0] === item.range[0] && priceRange[1] === item.range[1]
                           ? 'bg-black text-white border-black'
                           : 'bg-[#F1EADA] text-[#1C1C1C] border-[#D4C3A3] hover:bg-[#EAE0CD]'
                       }`}

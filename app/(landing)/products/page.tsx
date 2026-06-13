@@ -24,12 +24,15 @@ const ProductsPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(12);
   const [category, setCategory] = useState("");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
 
   const { data: productsData, isFetching: isFetchingProducts } = useGetProductsQuery({
     page,
     limit,
     category,
     sortBy: activeSort || undefined,
+    ...(priceRange[0] > 0 && { minPrice: priceRange[0] }),
+    ...(priceRange[1] > 0 && { maxPrice: priceRange[1] }),
   });
 
   const { data: categoriesData, isFetching: isFetchingCategories } = useGetCategoriesQuery();
@@ -83,6 +86,11 @@ const ProductsPage = () => {
                   setCategory(slug);
                   setPage(1);
                 }}
+                priceRange={priceRange}
+                setPriceRange={(range) => {
+                  setPriceRange(range);
+                  setPage(1);
+                }}
               />
             )}
           </div>
@@ -104,6 +112,11 @@ const ProductsPage = () => {
                   activeCategory={category}
                   setCategory={(slug) => {
                     setCategory(slug);
+                    setPage(1);
+                  }}
+                  priceRange={priceRange}
+                  setPriceRange={(range) => {
+                    setPriceRange(range);
                     setPage(1);
                   }}
                 />

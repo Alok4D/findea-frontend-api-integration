@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const authRoutes = ["/login", "/signup", "/lost-password"];
-  const protectedRoutes = ["/account"];
+  const protectedRoutes = ["/account", "/cart"];
 
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -33,5 +33,6 @@ export const config = {
     "/lost-password",
     "/account",
     "/account/:path*",
+    "/cart/:path*",
   ],
 };

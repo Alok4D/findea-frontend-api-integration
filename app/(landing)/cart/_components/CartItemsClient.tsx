@@ -40,16 +40,8 @@ function QtyStepper({ value, onChange }: { value: number; onChange: (n: number) 
 
 export function CartItemsClient() {
   const router = useRouter();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to view your cart", { id: "cart-auth-error" });
-      router.push("/login");
-    }
-  }, [isAuthenticated, router]);
 
-  const { data: cartData, isLoading } = useGetCartQuery(undefined, { skip: !isAuthenticated });
+  const { data: cartData, isLoading } = useGetCartQuery(undefined);
   const [localQty, setLocalQty] = useState<Record<string, number>>({});
   const [bulkAction, setBulkAction] = useState("add-to-cart");
   const [removeFromCart] = useRemoveFromCartMutation();
@@ -84,9 +76,6 @@ export function CartItemsClient() {
     toast.error("Clear cart API not yet implemented");
   };
 
-  if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
 
   if (isLoading) {
     return <CartItemsSkeleton />;

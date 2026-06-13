@@ -4,6 +4,10 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCreateOrderMutation } from "@/lib/redux/api/orderApi";
+import { useGetCartQuery } from "@/lib/redux/api/cartApi";
+import { toast } from "react-hot-toast";
 import { Store } from "lucide-react";
 
 const pageBg = "bg-[#F7F4F0]";
@@ -24,6 +28,54 @@ const PAYMENT_OPTIONS = [
 export function CheckoutPageClient() {
   const [delivery, setDelivery] = useState<"delivery" | "pickup">("delivery");
   const [payment, setPayment] = useState<(typeof PAYMENT_OPTIONS)[number]["id"]>("wave");
+  const router = useRouter();
+
+  const { data: cartData } = useGetCartQuery();
+  const [createOrder, { isLoading }] = useCreateOrderMutation();
+
+  const subtotal = cartData?.items?.reduce((acc: number, item: any) => acc + (parseFloat(item.product.price) * item.quantity), 0) || 0;
+  const shipping = 5;
+  const total = subtotal + shipping;
+
+  const handlePlaceOrder = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    // In a real app we would get this from cart, but using the requested payload for now
+    // combined with real form data if available, or fallbacks.
+    const orderPayload = {
+      customerEmail: formData.get("email") || "sarah@example.com",
+      customerName: `${formData.get("firstName") || "Sarah"} ${formData.get("lastName") || "Rahman"}`.trim(),
+      customerPhone: formData.get("phone") || "+8801811111111",
+      shippingLine1: formData.get("address") || "24 Gulshan Avenue",
+      shippingLine2: "Apt 4B",
+      shippingCity: "Dhaka",
+      shippingState: "Dhaka",
+      shippingCountry: "Bangladesh",
+      deliveryMethod: delivery.toUpperCase(),
+      deliveryNotes: formData.get("notes") || "Leave with the security guard if not home.",
+      paymentMethod: payment.toUpperCase(),
+      couponCode: "DEVTEST",
+      items: cartData?.items?.length > 0 
+        ? cartData.items.map((item: any) => ({ productId: item.productId, quantity: item.quantity }))
+        : [
+            {
+              productId: "cmq0r8avo001fjpt4w6ssq1ca",
+              quantity: 2
+            }
+          ]
+    };
+
+    try {
+      const res = await createOrder(orderPayload).unwrap();
+      toast.success("Order placed successfully!");
+      // Redirect or clear cart if needed. But for now we just redirect to confirmation
+      router.push("/order/confirmation");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to place order.");
+    }
+  };
 
   return (
     <div className={`w-full flex-1 ${pageBg}`}>
@@ -47,7 +99,7 @@ export function CheckoutPageClient() {
           </button>
         </div>
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_min(100%,420px)] lg:gap-16 xl:gap-20">
+        <form onSubmit={handlePlaceOrder} className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_min(100%,420px)] lg:gap-16 xl:gap-20">
           {/* Left — contact & delivery */}
           <div className="order-2 min-w-0 space-y-10 lg:order-1">
             <section>
@@ -61,22 +113,22 @@ export function CheckoutPageClient() {
               <div className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-5">
                 <div>
                   <FieldLabel>First name *</FieldLabel>
-                  <input className={field} type="text" autoComplete="given-name" />
+                  <input name="firstName" className={field} type="text" autoComplete="given-name" />
                 </div>
                 <div>
                   <FieldLabel>Last name *</FieldLabel>
-                  <input className={field} type="text" autoComplete="family-name" />
+                  <input name="lastName" className={field} type="text" autoComplete="family-name" />
                 </div>
               </div>
 
               <div className="mt-5">
                 <FieldLabel>Phone *</FieldLabel>
-                <input className={field} type="tel" autoComplete="tel" />
+                <input name="phone" className={field} type="tel" autoComplete="tel" />
               </div>
 
               <div className="mt-5">
                 <FieldLabel>Email (optional)</FieldLabel>
-                <input className={field} type="email" autoComplete="email" />
+                <input name="email" className={field} type="email" autoComplete="email" />
               </div>
             </section>
 
@@ -108,10 +160,10 @@ export function CheckoutPageClient() {
 
             <section>
               <FieldLabel>Delivery Address*</FieldLabel>
-              <input className={field} type="text" autoComplete="street-address" />
+              <input name="address" className={field} type="text" autoComplete="street-address" />
               <div className="mt-5">
                 <FieldLabel>Delivery Notes / Landmark</FieldLabel>
-                <textarea className={`${field} min-h-[140px] resize-y`} rows={4} />
+                <textarea name="notes" className={`${field} min-h-[140px] resize-y`} rows={4} />
               </div>
             </section>
 
@@ -128,42 +180,54 @@ export function CheckoutPageClient() {
             </h3>
             <p className="mt-2 font-playfair text-lg font-bold tracking-[0.2em] text-[#1A1A1A]">FINDEA</p>
 
-            <div className="mt-5 border border-[#2C2724]/15 bg-white p-4">
-              <div className="flex gap-4">
-                <div className="relative h-24 w-21 shrink-0 overflow-hidden bg-[#E3DDD3]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1597354984706-fac992d9306f?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt=""
-                    fill
-                    className="object-cover object-top"
-                    sizes="84px"
-                  />
+            <div className="mt-5 space-y-4">
+              {cartData?.items?.length > 0 ? (
+                cartData.items.map((item: any) => (
+                  <div key={item.id} className="border border-[#2C2724]/15 bg-white p-4">
+                    <div className="flex gap-4">
+                      <div className="relative h-24 w-21 shrink-0 overflow-hidden bg-[#E3DDD3]">
+                        <Image
+                          src={item.product.imageUrl || "https://images.unsplash.com/photo-1597354984706-fac992d9306f?q=80&w=688&auto=format&fit=crop"}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover object-top"
+                          sizes="84px"
+                        />
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="font-playfair text-[15px] font-semibold leading-snug text-[#1A1A1A]">
+                          {item.product.name}
+                        </p>
+                        <p className="mt-1 font-sans text-xs text-[#5c5346]">Qty: {item.quantity}</p>
+                        <p className="mt-2 font-playfair text-sm font-semibold text-[#1A1A1A]">${item.product.price}</p>
+                        <p className="mt-auto pt-4 text-right font-sans text-xs font-medium text-[#1A1A1A]">
+                          Subtotal: ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="border border-[#2C2724]/15 bg-white p-4 text-center font-sans text-sm">
+                  Your cart is empty.
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <p className="font-playfair text-[15px] font-semibold leading-snug text-[#1A1A1A]">
-                    Ant Studded Collar Shirt
-                  </p>
-                  <p className="mt-1 font-sans text-xs text-[#5c5346]">051546</p>
-                  <p className="mt-2 font-playfair text-sm font-semibold text-[#1A1A1A]">$864.00</p>
-                  <p className="mt-auto pt-4 text-right font-sans text-xs font-medium text-[#1A1A1A]">Subtotal: $864.00</p>
-                </div>
-              </div>
+              )}
             </div>
 
             <dl className="mt-8 space-y-3 border-t border-[#2C2724]/18 pt-6 font-sans text-sm text-[#1A1A1A]">
               <div className="flex justify-between gap-4">
                 <dt>Subtotal</dt>
-                <dd className="tabular-nums">$864.00</dd>
+                <dd className="tabular-nums">${subtotal.toFixed(2)}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt>Shipping</dt>
                 <dd className="text-right">
-                  <span className="font-medium">Flat Rate: $5.00</span>
+                  <span className="font-medium">Flat Rate: ${shipping.toFixed(2)}</span>
                 </dd>
               </div>
               <div className="flex justify-between border-t border-[#2C2724]/18 pt-4 font-playfair text-lg font-bold text-[#1A1A1A]">
                 <dt>Total</dt>
-                <dd className="tabular-nums">$864.00</dd>
+                <dd className="tabular-nums">${total.toFixed(2)}</dd>
               </div>
             </dl>
 
@@ -209,14 +273,15 @@ export function CheckoutPageClient() {
               </label>
             </div>
 
-            <Link
-              href="/order/confirmation"
-              className="mt-8 flex w-full items-center justify-center rounded-sm bg-[#F2E3C9] py-4 font-playfair text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#e8d4b0]"
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-8 flex w-full items-center justify-center rounded-sm bg-[#F2E3C9] py-4 font-playfair text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#e8d4b0] disabled:opacity-50"
             >
-              Place Order
-            </Link>
+              {isLoading ? "Placing Order..." : "Place Order"}
+            </button>
           </aside>
-        </div>
+        </form>
       </div>
     </div>
   );

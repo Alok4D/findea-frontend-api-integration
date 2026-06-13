@@ -36,6 +36,14 @@ export interface ProductsQueryParams {
   page?: number;
   limit?: number;
   category?: string;
+  brand?: string;
+  type?: string;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  inStock?: boolean;
+  booked?: boolean;
   sortBy?: string;
   search?: string;
 }
@@ -45,9 +53,17 @@ export const productApi = baseApi.injectEndpoints({
     getProducts: builder.query<ProductsResponse, ProductsQueryParams>({
       query: (params) => {
         const queryParams = new URLSearchParams();
-        if (params.page) queryParams.append("page", params.page.toString());
-        if (params.limit) queryParams.append("limit", params.limit.toString());
+        if (params.page !== undefined) queryParams.append("page", params.page.toString());
+        if (params.limit !== undefined) queryParams.append("limit", params.limit.toString());
         if (params.category) queryParams.append("category", params.category);
+        if (params.brand) queryParams.append("brand", params.brand);
+        if (params.type) queryParams.append("type", params.type);
+        if (params.location) queryParams.append("location", params.location);
+        if (params.minPrice !== undefined) queryParams.append("minPrice", params.minPrice.toString());
+        if (params.maxPrice !== undefined) queryParams.append("maxPrice", params.maxPrice.toString());
+        if (params.minRating !== undefined) queryParams.append("minRating", params.minRating.toString());
+        if (params.inStock !== undefined) queryParams.append("inStock", params.inStock.toString());
+        if (params.booked !== undefined) queryParams.append("booked", params.booked.toString());
         if (params.sortBy) queryParams.append("sortBy", params.sortBy);
         if (params.search) queryParams.append("search", params.search);
         

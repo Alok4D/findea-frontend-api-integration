@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   User,
@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { useGetCartQuery } from "@/lib/redux/api/cartApi";
 import { useGetWishlistQuery } from "@/lib/redux/api/wishlistApi";
+import { useGetProductsQuery } from "@/lib/redux/api/productApi";
 
 const Navbar = () => {
   
@@ -27,8 +28,21 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: searchResults, isFetching: isSearching } = useGetProductsQuery(
+    { search: debouncedSearchQuery, limit: 5 },
+    { skip: !debouncedSearchQuery.trim() }
+  );
 
   const { data: cartData } = useGetCartQuery(undefined, { skip: !isAuthenticated });
   const cartItemCount = cartData?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
@@ -78,6 +92,61 @@ const Navbar = () => {
   const toggleAccordion = (name: string) => {
     setActiveAccordion((prev) => (prev === name ? null : name));
   };
+
+  const renderSearchDropdown = (onItemClick: () => void) => (
+    <div className="absolute top-full left-0 w-full md:w-[350px] bg-white shadow-2xl mt-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto z-[60] border border-gray-100 rounded-b-sm">
+      {isSearching ? (
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-4 animate-pulse">
+              <div className="w-12 h-14 bg-gray-200 rounded-sm"></div>
+              <div className="flex-1 space-y-2 py-2">
+                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : searchResults?.data?.length ? (
+        <div className="py-2">
+          {searchResults.data.map((product) => (
+            <Link
+              key={product.id}
+              href={`/products/${product.slug}`}
+              onClick={() => {
+                onItemClick();
+                setSearchQuery('');
+              }}
+              className="flex items-center gap-4 p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 group transition-colors"
+            >
+              <div className="w-12 h-14 bg-gray-100 flex-shrink-0 rounded-sm overflow-hidden">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-playfair font-medium text-gray-800 truncate">{product.name}</p>
+                <p className="text-xs font-bold text-gray-500 mt-1">${product.price}</p>
+              </div>
+            </Link>
+          ))}
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="w-full text-center py-4 text-xs text-brand-text font-bold uppercase tracking-widest hover:bg-brand-beige/20 transition-colors"
+          >
+            View all results
+          </button>
+        </div>
+      ) : (
+        <div className="p-6 text-center text-sm text-gray-500 font-playfair italic">
+          No products found matching &quot;{debouncedSearchQuery}&quot;
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="relative bg-white">
@@ -156,6 +225,7 @@ const Navbar = () => {
                 <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Search size={18} />
                 </button>
+                {searchQuery.trim() && renderSearchDropdown(() => setIsMenuOpen(false))}
               </form>
             </div>
 
@@ -262,6 +332,8 @@ const Navbar = () => {
             >
               <Search size={18} strokeWidth={1.5} />
             </button>
+
+            {searchQuery.trim() && isSearchExpanded && renderSearchDropdown(() => setIsSearchExpanded(false))}
           </form>
         </div>
 

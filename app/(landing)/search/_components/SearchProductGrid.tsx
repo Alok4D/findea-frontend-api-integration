@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { Eye, Heart, Star, MapPin, Search } from "lucide-react";
 
 interface Product {
-  id: number;
+  id: string | number;
+  slug?: string;
   name: string;
   category: string;
   description: string;
-  price: string;
+  price: string | number;
   image: string;
   type: string;
   buttonText: string;
@@ -48,7 +49,7 @@ const SearchProductGrid = ({ products, viewMode, query }: SearchProductGridProps
     <div className={`grid gap-x-8 gap-y-16 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
       {products.map((item) => (
         <div key={item.id} className="group flex flex-col">
-          <Link href={`/products/${item.id}`} className="relative aspect-4/5 bg-[#F7F5F2] mb-6 overflow-hidden block">
+          <Link href={`/products/${item.slug || item.id}`} className="relative aspect-4/5 bg-[#F7F5F2] mb-6 overflow-hidden block">
             <Image
               src={item.image}
               alt={item.name}
@@ -77,7 +78,7 @@ const SearchProductGrid = ({ products, viewMode, query }: SearchProductGridProps
                 <Heart size={18} strokeWidth={1.5} className="hover:text-black cursor-pointer transition-colors" />
               </div>
             </div>
-            <Link href={`/products/${item.id}`}>
+            <Link href={`/products/${item.slug || item.id}`}>
               <h3 className="text-[20px] font-playfair font-bold text-[#1C1C1C] mb-1 group-hover:text-brand-text transition-colors">{item.name}</h3>
             </Link>
             <p className="text-[14px] text-gray-500 mb-2 font-playfair leading-relaxed italic">{item.description}</p>
@@ -121,7 +122,7 @@ const SearchProductGrid = ({ products, viewMode, query }: SearchProductGridProps
                   // Add to cart logic can be added here
                   console.log("Added to cart:", item.name);
                 } else {
-                  router.push(`/products/${item.id}`);
+                  router.push(`/products/${item.slug || item.id}`);
                 }
               }}
               className="mt-auto w-full bg-[#F1EADA] py-4 text-[12px] font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300 shadow-sm border border-[#D4C3A3]/30"

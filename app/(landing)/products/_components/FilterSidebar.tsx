@@ -47,13 +47,13 @@ const FilterSidebar = ({ categories, expandedFilters, toggleFilter, activeCatego
 
   const filterSections = [
     "PRICE",
-    "DISPONIBILITÉ",
-    "OCCASION",
-    "MATIÈRE",
-    "COULEUR",
-    "STYLE",
-    "ÂGE",
-    "ORIGINE",
+    // "DISPONIBILITÉ",
+    // "OCCASION",
+    // "MATIÈRE",
+    // "COULEUR",
+    // "STYLE",
+    // "ÂGE",
+    // "ORIGINE",
   ];
 
   return (

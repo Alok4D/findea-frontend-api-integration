@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ChevronRight, Star } from "lucide-react";
+import { useGetCategoriesQuery } from "@/lib/redux/api/productApi";
 
 interface SearchSidebarProps {
   activeType: string;
@@ -56,8 +57,8 @@ const SearchSidebar = ({
     );
   };
 
-  const sliderRef = React.useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = React.useState<number | null>(null);
+  const { data: categoriesData } = useGetCategoriesQuery();
+
   const [openSections, setOpenSections] = React.useState({
     type: true,
     category: true,
@@ -71,76 +72,14 @@ const SearchSidebar = ({
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleSliderMove = React.useCallback((clientX: number) => {
-    if (isDragging === null || !sliderRef.current) return;
-
-    const rect = sliderRef.current.getBoundingClientRect();
-    const percent = Math.min(Math.max(0, (clientX - rect.left) / rect.width), 1);
-    const newValue = Math.round(percent * 500000);
-
-    setPriceRange([0, newValue]);
-  }, [isDragging, setPriceRange]);
-
-  React.useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => handleSliderMove(e.clientX);
-    const handleTouchMove = (e: TouchEvent) => handleSliderMove(e.touches[0].clientX);
-    const handleMouseUp = () => setIsDragging(null);
-
-    if (isDragging !== null) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging, handleSliderMove]);
-
   return (
   <>
     <h3 className="hidden lg:block text-lg font-bold tracking-widest uppercase mb-8 border-b border-black pb-2">Filters</h3>
     
-    {/* TYPE Filter */}
-    <div className="mb-8">
-      <h4 
-        className="text-[14px] font-bold tracking-widest uppercase mb-4 flex justify-between items-center group cursor-pointer"
-        onClick={() => toggleSection('type')}
-      >
-        Type <ChevronRight size={16} className={`transition-transform duration-300 ${openSections.type ? 'rotate-90' : ''} text-gray-400 group-hover:text-black`} />
-      </h4>
-      {openSections.type && (
-        <div className="space-y-4">
-          {[
-            { label: "All", count: 363 },
-            { label: "Products", count: 186 },
-            { label: "Services", count: 31 },
-            { label: "Boutiques", count: 136 },
-            { label: "Registries", count: 10 }
-          ].map((item) => (
-            <label 
-              key={item.label} 
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={() => setActiveType(item.label)}
-            >
-              <div className="w-[18px] h-[18px] rounded-full border border-gray-300 flex items-center justify-center transition-all group-hover:border-black">
-                {activeType === item.label && <div className="w-[10px] h-[10px] rounded-full bg-[#1C1C1C]"></div>}
-              </div>
-              <span className={`text-[14px] transition-colors ${activeType === item.label ? 'text-black font-medium' : 'text-gray-500 group-hover:text-black'}`}>
-                {item.label} ({item.count})
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
+
 
     {/* CATEGORY Filter */}
-    <div className="mb-8 border-t border-gray-200 pt-8">
+    <div className="mb-8  pt-6">
       <h4 
         className="text-[14px] font-bold tracking-widest uppercase mb-4 flex justify-between items-center group cursor-pointer"
         onClick={() => toggleSection('category')}
@@ -149,27 +88,27 @@ const SearchSidebar = ({
       </h4>
       {openSections.category && (
         <div className="space-y-4">
-          {["Fashion", "Jewelry", "Home & Decor", "Wellness & Beauty"].map((cat) => (
+          {categoriesData?.map((cat) => (
             <label 
-              key={cat} 
+              key={cat.id} 
               className="flex items-center gap-3 cursor-pointer group"
-              onClick={() => toggleCategory(cat)}
+              onClick={() => toggleCategory(cat.slug)}
             >
               <div className={`w-[18px] h-[18px] border transition-all flex items-center justify-center ${
-                selectedCategories.includes(cat) 
+                selectedCategories.includes(cat.slug) 
                   ? 'bg-[#1C1C1C] border-[#1C1C1C]' 
                   : 'border-gray-300 group-hover:border-black'
               }`}>
-                {selectedCategories.includes(cat) && (
+                {selectedCategories.includes(cat.slug) && (
                   <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
               </div>
               <span className={`text-[14px] transition-colors ${
-                selectedCategories.includes(cat) ? 'text-black font-medium' : 'text-gray-500 group-hover:text-black'
+                selectedCategories.includes(cat.slug) ? 'text-black font-medium' : 'text-gray-500 group-hover:text-black'
               }`}>
-                {cat} (186)
+                {cat.name}
               </span>
             </label>
           ))}
@@ -188,40 +127,39 @@ const SearchSidebar = ({
       {openSections.price && (
         <div className="mt-4">
            <div className="text-[14px] mb-6 font-bold text-[#1C1C1C]">Price: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}</div>
-           <div 
-             ref={sliderRef}
-             className="relative h-1.5 bg-gray-200 mb-10 mx-3 cursor-pointer rounded-full"
-             onClick={(e) => {
-               if (isDragging !== null) return;
-               const rect = sliderRef.current?.getBoundingClientRect();
-               if (!rect) return;
-               const percent = (e.clientX - rect.left) / rect.width;
-               const val = Math.round(percent * 500000);
-               setPriceRange([0, val]);
-             }}
-           >
-             {/* Track highlight */}
-              <div 
-                className="absolute h-full bg-[#D4C3A3] z-10 rounded-full" 
-                style={{ 
-                  left: '0%', 
-                  width: `${(priceRange[1] / 500000) * 100}%`
-                }}
-              ></div>
-             
-             {/* Max Handle */}
-              <div 
-                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#D4C3A3] rounded-full border-2 border-white shadow-md cursor-grab active:cursor-grabbing z-30 transition-shadow hover:shadow-lg"
-                style={{ left: `calc(${(priceRange[1] / 500000) * 100}% - 8px)` }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  setIsDragging(1);
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  setIsDragging(1);
-                }}
-              ></div>
+           <div className="relative w-full h-1.5 bg-gray-200 rounded-lg mb-8">
+             {/* The track active region */}
+             <div 
+               className="absolute h-full bg-[#D4C3A3] rounded-lg"
+               style={{
+                 left: `${(priceRange[0] / 500000) * 100}%`,
+                 width: `${((priceRange[1] - priceRange[0]) / 500000) * 100}%`
+               }}
+             />
+             {/* Min Input */}
+             <input 
+               type="range" 
+               min="0" 
+               max="500000" 
+               value={priceRange[0]} 
+               onChange={(e) => {
+                 const val = Math.min(parseInt(e.target.value), priceRange[1] - 1);
+                 setPriceRange([val, priceRange[1]]);
+               }}
+               className="absolute -top-1 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#D4C3A3] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md cursor-pointer"
+             />
+             {/* Max Input */}
+             <input 
+               type="range" 
+               min="0" 
+               max="500000" 
+               value={priceRange[1]} 
+               onChange={(e) => {
+                 const val = Math.max(parseInt(e.target.value), priceRange[0] + 1);
+                 setPriceRange([priceRange[0], val]);
+               }}
+               className="absolute -top-1 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#D4C3A3] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md cursor-pointer"
+             />
            </div>
            <div className="flex flex-wrap gap-2">
               {[
@@ -232,9 +170,9 @@ const SearchSidebar = ({
               ].map(item => (
                 <button 
                   key={item.label} 
-                  onClick={() => setPriceRange([0, item.range[1]])}
+                  onClick={() => setPriceRange([item.range[0], item.range[1]])}
                   className={`px-4 py-1.5 text-[11px] font-bold transition-colors uppercase tracking-widest border ${
-                    priceRange[1] === item.range[1]
+                    priceRange[0] === item.range[0] && priceRange[1] === item.range[1]
                       ? 'bg-black text-white border-black'
                       : 'bg-[#F1EADA] text-[#1C1C1C] border-[#D4C3A3] hover:bg-[#EAE0CD]'
                   }`}

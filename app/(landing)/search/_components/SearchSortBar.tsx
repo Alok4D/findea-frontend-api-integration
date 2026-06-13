@@ -6,17 +6,24 @@ interface SearchSortBarProps {
   viewMode: "grid" | "list";
   setViewMode: (mode: "grid" | "list") => void;
   itemsPerPage: number;
+  setItemsPerPage: (num: number) => void;
+  sortOption: string;
+  setSortOption: (option: string) => void;
 }
 
-const SearchSortBar = ({ viewMode, setViewMode, itemsPerPage }: SearchSortBarProps) => {
+const SearchSortBar = ({ viewMode, setViewMode, itemsPerPage, setItemsPerPage, sortOption, setSortOption }: SearchSortBarProps) => {
   return (
     <div className="flex flex-wrap justify-between items-center mb-10 gap-4">
       <div className="flex items-center gap-4">
         <div className="relative border border-gray-300 bg-white">
-          <select className="appearance-none bg-transparent pl-4 pr-10 py-2.5 text-[12px] font-bold uppercase tracking-widest outline-none cursor-pointer">
-            <option>Default Sorting</option>
-            <option>Price: Low to High</option>
-            <option>Price: High to Low</option>
+          <select 
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="appearance-none bg-transparent pl-4 pr-10 py-2.5 text-[12px] font-bold uppercase tracking-widest outline-none cursor-pointer"
+          >
+            <option value="">Default Sorting</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
           </select>
           <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none text-gray-400" />
         </div>
@@ -40,10 +47,14 @@ const SearchSortBar = ({ viewMode, setViewMode, itemsPerPage }: SearchSortBarPro
       <div className="flex items-center gap-4">
         <span className="text-[12px] font-bold uppercase tracking-widest text-gray-500">Show</span>
         <div className="relative border border-gray-300 bg-white">
-          <select className="appearance-none bg-transparent pl-4 pr-10 py-2.5 text-[12px] font-bold outline-none cursor-pointer">
-            <option>12</option>
-            <option>24</option>
-            <option>48</option>
+          <select 
+            value={itemsPerPage}
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            className="appearance-none bg-transparent pl-4 pr-10 py-2.5 text-[12px] font-bold outline-none cursor-pointer"
+          >
+            <option value={12}>12</option>
+            <option value={24}>24</option>
+            <option value={48}>48</option>
           </select>
           <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none text-gray-400" />
         </div>

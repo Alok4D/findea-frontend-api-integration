@@ -1,13 +1,28 @@
 "use client";
 import { Search, MoveRight } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useGetProductsQuery } from "@/lib/redux/api/productApi";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const HeroSection = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: searchResults, isFetching: isSearching } = useGetProductsQuery(
+    { search: debouncedSearchQuery, limit: 5 },
+    { skip: !debouncedSearchQuery.trim() }
+  );
 
   const handleSearch = (e: React.FormEvent | React.KeyboardEvent) => {
     if ('key' in e && e.key !== 'Enter') return;
@@ -49,21 +64,69 @@ const HeroSection = () => {
             Findéa
           </h1>
 
-          <form 
-            onSubmit={handleSearch}
-            className="w-full max-w-[850px] bg-white text-black py-5 px-8 flex items-center justify-between shadow-sm rounded-none"
-          >
-            <input
-              type="text"
-              placeholder="Search a product, a boutique or a service...."
-              className="w-full bg-transparent border-none outline-none text-[13px] md:text-[18px] font-normal text-gray-800 placeholder:text-gray-600"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit">
-              <Search size={22} strokeWidth={1} className="text-gray-900 cursor-pointer" />
-            </button>
-          </form>
+          <div className="relative w-full max-w-[850px]">
+            <form 
+              onSubmit={handleSearch}
+              className="w-full bg-white text-black py-5 px-8 flex items-center justify-between shadow-sm rounded-none relative z-20"
+            >
+              <input
+                type="text"
+                placeholder="Search a product, a boutique or a service...."
+                className="w-full bg-transparent border-none outline-none text-[13px] md:text-[18px] font-normal text-gray-800 placeholder:text-gray-600"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              />
+              <button type="submit">
+                <Search size={22} strokeWidth={1} className="text-gray-900 cursor-pointer" />
+              </button>
+            </form>
+
+            {/* Dropdown Results */}
+            {isSearchFocused && debouncedSearchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white shadow-xl z-50 max-h-[400px] overflow-y-auto border border-gray-100 text-left">
+                {isSearching ? (
+                  <div className="p-6 text-center text-sm text-gray-500 font-playfair italic">
+                    Loading results...
+                  </div>
+                ) : searchResults?.data?.length ? (
+                  <div className="py-2">
+                    {searchResults.data.map((product: any) => (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.slug}`}
+                        className="flex items-center gap-4 p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 group transition-colors"
+                      >
+                        <div className="w-12 h-14 bg-gray-100 flex-shrink-0 rounded-sm overflow-hidden">
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-playfair font-medium text-gray-800 truncate">{product.name}</p>
+                          <p className="text-xs font-bold text-gray-500 mt-1">${product.price}</p>
+                        </div>
+                      </Link>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleSearch}
+                      className="w-full text-center py-4 text-xs text-brand-text font-bold uppercase tracking-widest hover:bg-brand-beige/20 transition-colors"
+                    >
+                      View all results
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-sm text-gray-500 font-playfair italic">
+                    No products found matching &quot;{debouncedSearchQuery}&quot;
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Desktop Action Buttons (Hidden on mobile) */}
           <div className="hidden md:flex items-center justify-center gap-5 mt-10 md:mt-12 w-full px-6">

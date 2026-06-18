@@ -45,6 +45,8 @@ export function CartItemsClient() {
   const [localQty, setLocalQty] = useState<Record<string, number>>({});
   const [bulkAction, setBulkAction] = useState("add-to-cart");
   const [removeFromCart] = useRemoveFromCartMutation();
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const items = cartData?.items || [];
 
@@ -71,9 +73,20 @@ export function CartItemsClient() {
     }
   };
 
-  const clearCart = () => {
-    // API logic for clear cart would go here if available
-    toast.error("Clear cart API not yet implemented");
+  const confirmClearCart = async () => {
+    setIsClearing(true);
+    try {
+      const promises = items.map((item: any) => removeFromCart(item.id).unwrap());
+      await Promise.all(promises);
+      setLocalQty({});
+      toast.success("Cart cleared successfully");
+      setIsClearModalOpen(false);
+    } catch (err: any) {
+      console.error("Failed to clear cart", err);
+      toast.error(err?.data?.message || err?.error || "Failed to clear cart");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
 
@@ -226,7 +239,7 @@ export function CartItemsClient() {
             </div> */}
             <button
               type="button"
-              onClick={clearCart}
+              onClick={() => setIsClearModalOpen(true)}
               className="bg-[#F2E1C8] px-8 py-2.5 font-playfair text-xs font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-[#e8d4b0] sm:self-end"
             >
               Clear Shopping Cart
@@ -282,6 +295,38 @@ export function CartItemsClient() {
           </div>
         </aside>
       </div>
+
+      {isClearModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm bg-[#F9F8F4] p-6 shadow-xl">
+            <h3 className="mb-4 font-playfair text-xl font-bold uppercase tracking-wide text-[#1A1A1A]">
+              Clear Cart
+            </h3>
+            <p className="mb-6 font-sans text-sm text-[#4A4A4A]">
+              Are you sure you want to remove all items from your shopping cart?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsClearModalOpen(false)}
+                disabled={isClearing}
+                className="border border-[#2C2724] px-5 py-2 font-playfair text-xs font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-black/5 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmClearCart}
+                disabled={isClearing}
+                className="bg-[#F2E1C8] flex items-center gap-2 px-5 py-2 font-playfair text-xs font-bold uppercase tracking-wide text-[#1A1A1A] hover:bg-[#e8d4b0] disabled:opacity-50"
+              >
+                {isClearing && <Loader2 className="h-3 w-3 animate-spin" />}
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

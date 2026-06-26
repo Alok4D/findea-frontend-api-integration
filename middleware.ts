@@ -8,18 +8,30 @@ export function middleware(request: NextRequest) {
   const authRoutes = ["/login", "/signup", "/lost-password"];
   const protectedRoutes = ["/account", "/cart"];
 
+  const adminAuthRoutes = ["/admin-login"];
+  const adminRoutes = ["/dashboard"];
+
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
+  const isAdminAuthRoute = adminAuthRoutes.some((route) => pathname.startsWith(route));
+  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
+
   if (token) {
     if (isAuthRoute) {
       return NextResponse.redirect(new URL("/account", request.url));
     }
+    if (isAdminAuthRoute) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   } else {
     if (isProtectedRoute) {
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL("/admin-login", request.url));
     }
   }
 
@@ -34,5 +46,8 @@ export const config = {
     "/account",
     "/account/:path*",
     "/cart/:path*",
+    "/admin-login",
+    "/dashboard",
+    "/dashboard/:path*",
   ],
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { MoreVertical, Eye, Pencil, Ban, Trash2 } from "lucide-react";
 
 const products = [
@@ -97,9 +98,11 @@ export default function ProductsTable() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-4">
-                    <img
+                    <Image
                       src={product.image}
                       alt={product.name}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 shrink-0 object-cover border border-[#CFCAC1]"
                     />
                     <div>

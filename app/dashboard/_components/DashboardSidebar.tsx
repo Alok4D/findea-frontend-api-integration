@@ -63,7 +63,7 @@ export default function DashboardSidebar() {
 
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -113,7 +113,7 @@ export default function DashboardSidebar() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-4 py-3 text-sm font-medium text-[#1C1C1C] transition-colors hover:text-black"
+            className="flex w-full items-center  gap-4 py-3 text-sm font-medium text-[#1C1C1C] transition-colors hover:text-black"
           >
             <LogOut size={18} strokeWidth={1.5} />
             Logout

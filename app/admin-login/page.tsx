@@ -99,13 +99,9 @@ const AdminLoginPage = () => {
       {/* --- LOGIN FORM SECTION --- */}
       <main className="max-w-[480px] w-full mx-auto px-4 py-8 text-[#1A1A1A]">
         <div className="bg-[#DEDAD2] border border-[#CFCAC1] p-8 md:p-14 shadow-sm">
-          <div className="flex justify-center mb-8">
-            <h2 className="text-2xl font-bold tracking-widest uppercase text-center border-b-2 border-[#1A1A1A] pb-2 inline-block">
-              Artisan & Co.
-            </h2>
-          </div>
+     
 
-          <h3 className="text-lg font-bold mb-6 tracking-wide text-center">
+          <h3 className="text-2xl font-bold mb-6 tracking-wide text-center">
             Dashboard Access
           </h3>
 

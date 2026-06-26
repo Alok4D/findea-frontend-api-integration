@@ -79,8 +79,20 @@ export default function DashboardPage() {
                   <span>{stat.label}</span>
                   <div className="group relative cursor-help">
                     <Info size={14} className="text-[#6E6A63]" />
-                    <div className="absolute bottom-full left-1/2 mb-2 hidden w-max -translate-x-1/2 rounded bg-[#1A1A1A] px-2 py-1 text-[10px] text-white group-hover:block z-10">
-                      {stat.tooltip}
+                    <div 
+                      className={`absolute bottom-[calc(100%+8px)] hidden group-hover:block z-20 pointer-events-none ${
+                        i === stats.length - 1 ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                      }`}
+                    >
+                      <div className="relative bg-[#1A1A1A] text-white text-[11px] rounded-md px-3 py-2 whitespace-nowrap shadow-lg">
+                        {stat.tooltip}
+                        {/* Arrow pointing down */}
+                        <span 
+                          className={`absolute top-full border-4 border-transparent border-t-[#1A1A1A] ${
+                            i === stats.length - 1 ? 'right-1' : 'left-1/2 -translate-x-1/2'
+                          }`} 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ const products = [
     stockStatus: "In Stock",
     status: "Active",
     registries: 4,
+    image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=120&h=120&fit=crop&auto=format",
   },
   {
     id: 2,
@@ -21,6 +22,7 @@ const products = [
     stockStatus: "Out of Stock",
     status: "Pending",
     registries: 4,
+    image: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=120&h=120&fit=crop&auto=format",
   },
   {
     id: 3,
@@ -30,6 +32,7 @@ const products = [
     stockStatus: "In Stock",
     status: "Approved",
     registries: 4,
+    image: "https://images.unsplash.com/photo-1622372738946-62e02505feb3?w=120&h=120&fit=crop&auto=format",
   },
   {
     id: 4,
@@ -39,6 +42,7 @@ const products = [
     stockStatus: "In Stock",
     status: "Draft",
     registries: 4,
+    image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=120&h=120&fit=crop&auto=format",
   },
 ];
 
@@ -93,7 +97,11 @@ export default function ProductsTable() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 shrink-0 bg-[#8e8a86]"></div>
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-16 w-16 shrink-0 object-cover border border-[#CFCAC1]"
+                    />
                     <div>
                       <p className="font-playfair font-bold text-[#1A1A1A]">
                         {product.name}

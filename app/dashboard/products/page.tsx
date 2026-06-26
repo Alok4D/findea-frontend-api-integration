@@ -43,10 +43,10 @@ const products = [
 ];
 
 export default function ProductManagementPage() {
-  const [openMenuId, setOpenMenuId] = useState<number | null>(1); // 1 is open by default for demo
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   return (
-    <div className="mx-auto max-w-6xl pb-16">
+    <div className="mx-auto max-w-full pb-16">
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <h1 className="font-playfair text-3xl font-bold tracking-wide text-[#1A1A1A] hidden lg:block">
           Artisan & Co.
@@ -110,8 +110,8 @@ export default function ProductManagementPage() {
         </div>
 
         {/* Table */}
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="w-full overflow-x-auto lg:overflow-visible">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead>
               <tr className="bg-[#DEDAD2]/70 font-playfair text-[#1A1A1A]">
                 <th className="px-4 py-4 w-12 text-center">
@@ -168,20 +168,27 @@ export default function ProductManagementPage() {
                     </button>
                     {/* Dropdown Menu */}
                     {openMenuId === product.id && (
-                      <div className="absolute right-8 top-10 z-10 w-48 rounded bg-[#F9F8F4] py-2 shadow-lg ring-1 ring-black/5">
-                        <button className="flex w-full items-center gap-3 px-4 py-2 text-xs text-[#1A1A1A] hover:bg-[#DEDAD2]/50">
-                          <Eye size={14} /> View Product Page
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2 text-xs text-[#1A1A1A] hover:bg-[#DEDAD2]/50">
-                          <Pencil size={14} /> Edit
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2 text-xs text-[#1A1A1A] hover:bg-[#DEDAD2]/50">
-                          <Ban size={14} /> Deactivate
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2 text-xs text-[#1A1A1A] hover:bg-[#DEDAD2]/50">
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </div>
+                      <>
+                        {/* Overlay to close menu when clicking outside */}
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setOpenMenuId(null)}
+                        ></div>
+                        <div className="absolute right-10 top-10 z-50 w-48 border border-[#CFCAC1] bg-[#F5F3EE] py-2 shadow-sm">
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Eye size={14} strokeWidth={1.5} /> View Product Page
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Pencil size={14} strokeWidth={1.5} /> Edit
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Ban size={14} strokeWidth={1.5} /> Deactivate
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Trash2 size={14} strokeWidth={1.5} /> Delete
+                          </button>
+                        </div>
+                      </>
                     )}
                   </td>
                 </tr>

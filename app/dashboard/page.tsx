@@ -53,7 +53,7 @@ const activities = [
 
 export default function DashboardPage() {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-full">
       <div className="mb-8 hidden lg:flex items-center gap-4">
         <h1 className="font-playfair text-3xl font-bold tracking-wide text-[#1A1A1A]">
           Artisan & Co.

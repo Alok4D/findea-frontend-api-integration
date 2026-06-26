@@ -77,7 +77,7 @@ export default function DashboardSidebar() {
         )}
       >
         <div className="mb-10 px-8 flex justify-between items-center">
-          <h1 className="font-playfair text-2xl font-bold tracking-wide text-[#1A1A1A] hidden lg:block">
+          <h1 className="font-playfair text-2xl font-bold tracking-wide text-[#1A1A1A]">
             Artisan & Co.
           </h1>
           {/* Close button on mobile inside the drawer */}

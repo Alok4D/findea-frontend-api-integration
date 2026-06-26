@@ -154,9 +154,9 @@ export default function DashboardPage() {
                       <span
                         className={`inline-block border px-3 py-0.5 text-[11px] ${
                           order.status === "CANCELLED"
-                            ? "border-red-300 text-red-600 bg-red-50"
+                            ? "border-[#CFCAC1] text-[#6E6A63] bg-transparent"
                             : order.status === "FULFILLED"
-                            ? "border-green-300 text-green-700 bg-green-50"
+                            ? "border-[#1A1A1A] text-[#1A1A1A] bg-transparent"
                             : "border-[#CFCAC1] text-[#1A1A1A]"
                         }`}
                       >
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-medium text-[#1A1A1A] truncate">
                           {product.name}
                         </p>
-                        <p className="text-xs text-red-500 mt-0.5">
+                        <p className="text-xs text-[#6E6A63] mt-0.5 italic">
                           Only {product.stock} left
                         </p>
                       </div>

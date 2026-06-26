@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   LayoutGrid,
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useAppDispatch } from "@/lib/redux/hooks";
+import { logout } from "@/lib/redux/slices/authSlice";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,7 +34,14 @@ const navLinks = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.push("/admin-login");
+  };
 
   return (
     <>
@@ -103,6 +112,7 @@ export default function DashboardSidebar() {
         <div className="mt-auto px-8 pt-8">
           <button
             type="button"
+            onClick={handleLogout}
             className="flex w-full items-center gap-4 py-3 text-sm font-medium text-[#1C1C1C] transition-colors hover:text-black"
           >
             <LogOut size={18} strokeWidth={1.5} />

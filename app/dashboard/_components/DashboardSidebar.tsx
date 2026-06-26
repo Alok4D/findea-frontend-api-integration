@@ -77,9 +77,11 @@ export default function DashboardSidebar() {
         )}
       >
         <div className="mb-10 px-8 flex justify-between items-center">
+         <Link href={"/"}>
           <h1 className="font-playfair text-2xl font-bold tracking-wide text-[#1A1A1A]">
             Artisan & Co.
           </h1>
+         </Link>
           {/* Close button on mobile inside the drawer */}
           <button onClick={() => setIsOpen(false)} className="lg:hidden ml-auto text-[#1A1A1A]">
             <X size={24} />

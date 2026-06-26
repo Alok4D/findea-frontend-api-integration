@@ -49,6 +49,21 @@ const products = [
 
 export default function ProductsTable() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+
+  const toggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedRows(products.map((p) => p.id));
+    } else {
+      setSelectedRows([]);
+    }
+  };
+
+  const toggleRow = (id: number) => {
+    setSelectedRows((prev) =>
+      prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+    );
+  };
 
   return (
     <div className="border border-[#CFCAC1]">
@@ -77,7 +92,12 @@ export default function ProductsTable() {
           <thead>
             <tr className="bg-[#DEDAD2]/70 font-playfair text-[#1A1A1A]">
               <th className="px-4 py-4 w-12 text-center">
-                <input type="checkbox" className="accent-[#1A1A1A]" />
+                <input 
+                  type="checkbox" 
+                  className="accent-[#1A1A1A] cursor-pointer" 
+                  checked={selectedRows.length === products.length && products.length > 0}
+                  onChange={toggleAll}
+                />
               </th>
               <th className="px-4 py-4 font-bold">Product</th>
               <th className="px-4 py-4 font-bold">Price</th>
@@ -88,79 +108,89 @@ export default function ProductsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#CFCAC1]">
-            {products.map((product, index) => (
-              <tr
-                key={product.id}
-                className={index % 2 !== 0 ? "bg-[#DEDAD2]/30" : "bg-transparent"}
-              >
-                <td className="px-4 py-4 text-center">
-                  <input type="checkbox" className="accent-[#1A1A1A]" />
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-4">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      width={64}
-                      height={64}
-                      className="h-16 w-16 shrink-0 object-cover border border-[#CFCAC1]"
+            {products.map((product) => {
+              const isSelected = selectedRows.includes(product.id);
+              return (
+                <tr
+                  key={product.id}
+                  className={`transition-colors ${
+                    isSelected ? "bg-[#DEDAD2]/50" : "bg-transparent hover:bg-[#DEDAD2]/10"
+                  }`}
+                >
+                  <td className="px-4 py-4 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="accent-[#1A1A1A] cursor-pointer" 
+                      checked={isSelected}
+                      onChange={() => toggleRow(product.id)}
                     />
-                    <div>
-                      <p className="font-playfair font-bold text-[#1A1A1A]">
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-[#4A4A4A] mt-1">{product.store}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4 font-playfair font-bold text-[#1A1A1A]">
-                  {product.price}
-                </td>
-                <td className="px-4 py-4 text-[#1A1A1A]">{product.stockStatus}</td>
-                <td className="px-4 py-4">
-                  <span className="inline-block border border-[#CFCAC1] bg-white/50 px-3 py-1 text-xs text-[#1A1A1A]">
-                    {product.status}
-                  </span>
-                </td>
-                <td className="px-4 py-4 font-playfair font-bold text-[#1A1A1A] text-center">
-                  {product.registries}
-                </td>
-                <td className="px-4 py-4 text-center relative">
-                  <button
-                    onClick={() =>
-                      setOpenMenuId(openMenuId === product.id ? null : product.id)
-                    }
-                    className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-[#DEDAD2]"
-                  >
-                    <MoreVertical size={18} className="text-[#1A1A1A]" />
-                  </button>
-                  {/* Dropdown Menu */}
-                  {openMenuId === product.id && (
-                    <>
-                      {/* Overlay to close menu when clicking outside */}
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setOpenMenuId(null)}
-                      ></div>
-                      <div className="absolute right-10 top-10 z-50 w-48 border border-[#CFCAC1] bg-[#F5F3EE] py-2 shadow-sm">
-                        <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
-                          <Eye size={14} strokeWidth={1.5} /> View Product Page
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
-                          <Pencil size={14} strokeWidth={1.5} /> Edit
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
-                          <Ban size={14} strokeWidth={1.5} /> Deactivate
-                        </button>
-                        <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
-                          <Trash2 size={14} strokeWidth={1.5} /> Delete
-                        </button>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-4">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        width={64}
+                        height={64}
+                        className="h-16 w-16 shrink-0 object-cover border border-[#CFCAC1]"
+                      />
+                      <div>
+                        <p className="font-playfair font-bold text-[#1A1A1A]">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-[#4A4A4A] mt-1">{product.store}</p>
                       </div>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 font-playfair font-bold text-[#1A1A1A]">
+                    {product.price}
+                  </td>
+                  <td className="px-4 py-4 text-[#1A1A1A]">{product.stockStatus}</td>
+                  <td className="px-4 py-4">
+                    <span className="inline-block border border-[#CFCAC1] bg-white/50 px-3 py-1 text-xs text-[#1A1A1A]">
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 font-playfair font-bold text-[#1A1A1A] text-center">
+                    {product.registries}
+                  </td>
+                  <td className="px-4 py-4 text-center relative">
+                    <button
+                      onClick={() =>
+                        setOpenMenuId(openMenuId === product.id ? null : product.id)
+                      }
+                      className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-[#DEDAD2]"
+                    >
+                      <MoreVertical size={18} className="text-[#1A1A1A]" />
+                    </button>
+                    {/* Dropdown Menu */}
+                    {openMenuId === product.id && (
+                      <>
+                        {/* Overlay to close menu when clicking outside */}
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setOpenMenuId(null)}
+                        ></div>
+                        <div className="absolute right-10 top-10 z-50 w-48 border border-[#CFCAC1] bg-[#F5F3EE] py-2 shadow-sm">
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Eye size={14} strokeWidth={1.5} /> View Product Page
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Pencil size={14} strokeWidth={1.5} /> Edit
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Ban size={14} strokeWidth={1.5} /> Deactivate
+                          </button>
+                          <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Trash2 size={14} strokeWidth={1.5} /> Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -1,6 +1,17 @@
+import React from "react";
 import { Search } from "lucide-react";
+import { ProductsQueryParams } from "@/lib/redux/api/productApi";
 
-export default function ProductsFilter() {
+interface ProductsFilterProps {
+  queryParams: ProductsQueryParams;
+  setQueryParams: React.Dispatch<React.SetStateAction<ProductsQueryParams>>;
+}
+
+export default function ProductsFilter({ queryParams, setQueryParams }: ProductsFilterProps) {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQueryParams((prev) => ({ ...prev, search: e.target.value, page: 1 }));
+  };
+
   return (
     <>
       <div className="mb-6">
@@ -9,6 +20,8 @@ export default function ProductsFilter() {
           <input
             type="text"
             placeholder="Search Products..."
+            value={queryParams.search || ""}
+            onChange={handleSearchChange}
             className="w-full border border-[#CFCAC1] bg-transparent py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#1A1A1A]"
           />
         </div>

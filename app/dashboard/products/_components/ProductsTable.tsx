@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { MoreVertical, Eye, Pencil, Ban, Trash2, AlertTriangle, X } from "lucide-react";
 import { ApiProduct, useDeleteProductMutation } from "@/lib/redux/api/productApi";
 
@@ -287,9 +288,12 @@ export default function ProductsTable({ products, isLoading }: ProductsTableProp
                             onClick={() => setOpenMenuId(null)}
                           ></div>
                           <div className="absolute right-10 top-10 z-50 w-48 border border-[#CFCAC1] bg-[#F5F3EE] py-2 shadow-sm text-left">
-                            <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
+                            <Link 
+                              href={`/products/${product.slug}`}
+                              className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors"
+                            >
                               <Eye size={14} strokeWidth={1.5} /> View Product Page
-                            </button>
+                            </Link>
                             <button className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#1A1A1A] hover:bg-[#DEDAD2] transition-colors">
                               <Pencil size={14} strokeWidth={1.5} /> Edit
                             </button>
